@@ -27,7 +27,7 @@ public class PaymentVoucherController {
     public ResponseEntity<?> savePaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
         Long idUsuario = 2L;
         watchLog(paymentVoucherRequest);
-        paymentVoucherValidator.validate(paymentVoucherRequest, false);
+        //paymentVoucherValidator.validate(paymentVoucherRequest, false);
         Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, idUsuario);
         return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
     }

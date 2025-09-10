@@ -11,12 +11,15 @@ import com.certicom.certifact_boletas_service_ng.feign.UserFeign;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
+import com.certicom.certifact_boletas_service_ng.service.TemplateService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +34,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final CompanyFeign companyFeign;
     private final BranchOfficeFeign branchOfficeFeign;
     private final PaymentVoucherFeign paymentVoucherFeign;
+    private final TemplateService templateService;
 
     @Override
     public Map<String, Object> createPaymentVoucher(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
@@ -50,8 +54,8 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         try {
             PaymentVoucherDto paymentVoucherDto = PaymentVoucherConverter.requestToDto(paymentVoucher);
             paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
-            Integer estadoItem = ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION;
-            UserDto userLogged = userFeign.findUserById(idUsuario);
+            //Integer estadoItem = ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION;
+            //UserDto userLogged = userFeign.findUserById(idUsuario);
             CompanyDto companyDto = completarDatosEmisor(paymentVoucherDto);
             setCodigoTipoOperacionCatalog(paymentVoucherDto);
             setOficinaId(paymentVoucherDto, companyDto);
@@ -65,10 +69,27 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
                 }
             }
 
+            Map<String, String> plantillaGenerado = generarPlantillaXml(companyDto, paymentVoucherDto);
         } catch (Exception e) {
             log.error("ERROR: {}", e.getMessage());
         }
         return null;
+    }
+
+    private Map<String, String> generarPlantillaXml(CompanyDto companyDto, PaymentVoucherDto paymentVoucherDto) throws IOException, NoSuchAlgorithmException {
+        System.out.println("GENERANDO PLANTILLA");
+        Map<String, String> plantillaGenerado = new HashMap<>();
+        if (companyDto.getOseId() != null && companyDto.getOseId() == 1) {
+            plantillaGenerado = templateService.buildPaymentVoucherSignOse(paymentVoucherDto);
+        } else if (companyDto.getOseId() != null && companyDto.getOseId() == 2) {
+            plantillaGenerado = templateService.buildPaymentVoucherSignOseBliz(paymentVoucherDto);
+        } else if (companyDto.getOseId() != null && (companyDto.getOseId() == 10 || companyDto.getOseId() == 12)) {
+            plantillaGenerado = templateService.buildPaymentVoucherSignCerti(paymentVoucherDto);
+        } else {
+            plantillaGenerado = templateService.buildPaymentVoucherSign(paymentVoucherDto);
+        }
+        log.info("PLANTILLA GENERADA: {}", plantillaGenerado.get(ConstantesParameter.PARAM_FILE_XML_BASE64));
+        return plantillaGenerado;
     }
 
     private Integer getProximoNumero(String tipoDocumento, String serie, String ruc) {

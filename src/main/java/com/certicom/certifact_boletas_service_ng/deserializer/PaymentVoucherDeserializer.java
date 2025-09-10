@@ -658,7 +658,7 @@ public class PaymentVoucherDeserializer extends InputField<PaymentVoucherRequest
         objectResult.setCodigoTipoNotaCredito(codigoTipoNotaCredito);
         objectResult.setCodigoTipoNotaDebito(codigoTipoNotaDebito);
         objectResult.setMotivoNota(motivo);
-        objectResult.setAnticipoPaymentRequests(anticipoPaymentRequests);
+        objectResult.setAnticipos(anticipoPaymentRequests);
         objectResult.setCuotas(cuotas);
         objectResult.setCamposAdicionales(camposAdicionales);
         objectResult.setGuiasRelacionadas(guiaPaymentVoucherRequests);
