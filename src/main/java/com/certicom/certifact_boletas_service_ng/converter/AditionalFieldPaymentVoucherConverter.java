@@ -10,10 +10,14 @@ public class AditionalFieldPaymentVoucherConverter {
 
     public static List<AditionalFieldPaymentVoucherDto> requestListToDtoList(List<AditionalFieldPaymentVoucherRequest> aditionalFieldPaymentVoucherRequests) {
         List<AditionalFieldPaymentVoucherDto> aditionalFieldPaymentVoucherDtos = new ArrayList<>();
-        for (AditionalFieldPaymentVoucherRequest aditionalFieldPaymentVoucherRequest : aditionalFieldPaymentVoucherRequests) {
-            aditionalFieldPaymentVoucherDtos.add(requestToDto(aditionalFieldPaymentVoucherRequest));
+        if(aditionalFieldPaymentVoucherRequests != null && !aditionalFieldPaymentVoucherRequests.isEmpty()) {
+            for (AditionalFieldPaymentVoucherRequest aditionalFieldPaymentVoucherRequest : aditionalFieldPaymentVoucherRequests) {
+                aditionalFieldPaymentVoucherDtos.add(requestToDto(aditionalFieldPaymentVoucherRequest));
+            }
+            return aditionalFieldPaymentVoucherDtos;
+        } else {
+            return null;
         }
-        return aditionalFieldPaymentVoucherDtos;
     }
 
     public static AditionalFieldPaymentVoucherDto requestToDto(AditionalFieldPaymentVoucherRequest aditionalFieldPaymentVoucherRequest) {

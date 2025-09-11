@@ -10,10 +10,14 @@ public class AnticipoPaymentConverter {
 
     public static List<AnticipoPaymentDto> requestListToDtoList(List<AnticipoPaymentRequest> anticipoPaymentRequest) {
         List<AnticipoPaymentDto> anticipoPaymentDtoList = new ArrayList<>();
-        for (AnticipoPaymentRequest paymentRequest : anticipoPaymentRequest) {
-            anticipoPaymentDtoList.add(AnticipoPaymentConverter.requestToDto(paymentRequest));
+        if(anticipoPaymentRequest != null && !anticipoPaymentRequest.isEmpty()) {
+            for (AnticipoPaymentRequest paymentRequest : anticipoPaymentRequest) {
+                anticipoPaymentDtoList.add(AnticipoPaymentConverter.requestToDto(paymentRequest));
+            }
+        } else {
+            return null;
         }
-        return  anticipoPaymentDtoList;
+        return anticipoPaymentDtoList;
     }
     public static AnticipoPaymentDto requestToDto(AnticipoPaymentRequest anticipoPaymentRequest) {
         return AnticipoPaymentDto.builder().build();

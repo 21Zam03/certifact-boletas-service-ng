@@ -3,6 +3,7 @@ package com.certicom.certifact_boletas_service_ng.validation;
 import com.certicom.certifact_boletas_service_ng.deserializer.InputField;
 import com.certicom.certifact_boletas_service_ng.dto.DetailsPaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
+import com.certicom.certifact_boletas_service_ng.request.DetailsPaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -19,7 +20,7 @@ import java.math.RoundingMode;
 @RequiredArgsConstructor
 public class PaymentVoucherDetailValidator extends InputField<Object> {
 
-    public void validate(DetailsPaymentVoucherDto item, String tipoComprobante, String ublVersion, String ruc) {
+    public void validate(DetailsPaymentVoucherRequest item, String tipoComprobante, String ublVersion, String ruc) {
         validateUnidadMedida(item.getCodigoUnidadMedida(), tipoComprobante);
         validateCantidad(item.getCantidad(), tipoComprobante, item.getCodigoUnidadMedida());
         validateCodigoProducto(item.getCodigoProducto());

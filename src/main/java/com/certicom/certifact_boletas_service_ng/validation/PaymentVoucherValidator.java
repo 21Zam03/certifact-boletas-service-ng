@@ -10,6 +10,8 @@ import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
 import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
 import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
+import com.certicom.certifact_boletas_service_ng.request.AnticipoPaymentRequest;
+import com.certicom.certifact_boletas_service_ng.request.DetailsPaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
@@ -71,15 +73,15 @@ public class PaymentVoucherValidator extends InputField<Object> {
         validateTipoDocumentoRelacionado(paymentVoucherRequest.getCodigoTipoOtroDocumentoRelacionado());
         validateNumeroDocumentoRelacionado(paymentVoucherRequest.getSerieNumeroOtroDocumentoRelacionado(),
                 paymentVoucherRequest.getCodigoTipoOtroDocumentoRelacionado());
-        validateAnticipos(AnticipoPaymentConverter.requestListToDtoList(paymentVoucherRequest.getAnticipos()));
-        validateItems(DetailsPaymentVoucherConverter.requestListToDtoList(paymentVoucherRequest.getItems()), paymentVoucherRequest.getTipoComprobante(), paymentVoucherRequest.getUblVersion(), paymentVoucherRequest.getRucEmisor());
+        validateAnticipos(paymentVoucherRequest.getAnticipos());
+        validateItems(paymentVoucherRequest.getItems(), paymentVoucherRequest.getTipoComprobante(), paymentVoucherRequest.getUblVersion(), paymentVoucherRequest.getRucEmisor());
         if(paymentVoucherRequest.getUblVersion().equals(ConstantesSunat.UBL_VERSION_2_1)) {
-            validateTotalIsc(paymentVoucherRequest.getTotalValorBaseIsc(), paymentVoucherRequest.getTotalIsc(), DetailsPaymentVoucherConverter.requestListToDtoList(paymentVoucherRequest.getItems()));
-            validateTotalGratuita(paymentVoucherRequest.getTotalValorVentaGratuita(), paymentVoucherRequest.getTotalImpOperGratuita(), DetailsPaymentVoucherConverter.requestListToDtoList(paymentVoucherRequest.getItems()));
-            validateTotalGravada(paymentVoucherRequest.getTotalValorVentaGravada(), paymentVoucherRequest.getTotalIgv(), DetailsPaymentVoucherConverter.requestListToDtoList(paymentVoucherRequest.getItems()));
-            validateTotalOtrosTributos(paymentVoucherRequest.getTotalValorBaseOtrosTributos(), paymentVoucherRequest.getTotalOtrostributos(), DetailsPaymentVoucherConverter.requestListToDtoList(paymentVoucherRequest.getItems()));
+            validateTotalIsc(paymentVoucherRequest.getTotalValorBaseIsc(), paymentVoucherRequest.getTotalIsc(), paymentVoucherRequest.getItems());
+            validateTotalGratuita(paymentVoucherRequest.getTotalValorVentaGratuita(), paymentVoucherRequest.getTotalImpOperGratuita(), paymentVoucherRequest.getItems());
+            validateTotalGravada(paymentVoucherRequest.getTotalValorVentaGravada(), paymentVoucherRequest.getTotalIgv(), paymentVoucherRequest.getItems());
+            validateTotalOtrosTributos(paymentVoucherRequest.getTotalValorBaseOtrosTributos(), paymentVoucherRequest.getTotalOtrostributos(), paymentVoucherRequest.getItems());
         }
-        validateDetracciones(PaymentVoucherConverter.requestToDto(paymentVoucherRequest));
+        validateDetracciones(paymentVoucherRequest);
     }
 
     private void validateRucAtivo(String rucEmisor) {
@@ -459,24 +461,24 @@ public class PaymentVoucherValidator extends InputField<Object> {
         }
     }
 
-    private void validateAnticipos(List<AnticipoPaymentDto> anticipos) {
+    private void validateAnticipos(List<AnticipoPaymentRequest> anticipos) {
         if (anticipos != null && !anticipos.isEmpty()) {
-            for (AnticipoPaymentDto anticipo : anticipos) {
+            for (AnticipoPaymentRequest anticipo : anticipos) {
                 anticipoValidator.validateAnticipo(anticipo);
             }
         }
     }
 
-    private void validateItems(List<DetailsPaymentVoucherDto> items, String tipoComprobante, String ublVersion, String ruc) {
+    private void validateItems(List<DetailsPaymentVoucherRequest> items, String tipoComprobante, String ublVersion, String ruc) {
         if (items == null || items.isEmpty()) {
             throw new ValidationException("El campo [" + itemsLabel + "] es obligatorio, debe contener al menos un item.");
         }
-        for (DetailsPaymentVoucherDto item : items) {
+        for (DetailsPaymentVoucherRequest item : items) {
             paymentVoucherDetailValidator.validate(item, tipoComprobante, ublVersion, ruc);
         }
     }
 
-    private void validateTotalIsc(BigDecimal montoBaseIsc, BigDecimal montoIsc, List<DetailsPaymentVoucherDto> items) {
+    private void validateTotalIsc(BigDecimal montoBaseIsc, BigDecimal montoIsc, List<DetailsPaymentVoucherRequest> items) {
         boolean existeAlmenosUno = false;
         if (montoBaseIsc != null || montoIsc != null) {
             if (montoBaseIsc == null) {
@@ -485,7 +487,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
             if (montoIsc == null) {
                 throw new ValidationException("El campo [" + totalIscLabel + "] es obligatorio, si ingresa valor en [" + totalValorBaseIscLabel + "]");
             }
-            for (DetailsPaymentVoucherDto line : items) {
+            for (DetailsPaymentVoucherRequest line : items) {
                 existeAlmenosUno = paymentVoucherDetailValidator.validateOperacionISC(line.getMontoBaseIsc(), line.getIsc(), line.getPorcentajeIsc(), line.getCodigoTipoCalculoISC());
                 if (existeAlmenosUno) {
                     break;
@@ -497,7 +499,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
         }
     }
 
-    private void validateTotalGratuita(BigDecimal montoBaseGratuita, BigDecimal montoGratuita, List<DetailsPaymentVoucherDto> items) {
+    private void validateTotalGratuita(BigDecimal montoBaseGratuita, BigDecimal montoGratuita, List<DetailsPaymentVoucherRequest> items) {
         boolean existeAlmenosUno = false;
         boolean existeProductoGratuito = false;
         if (montoBaseGratuita != null || montoGratuita != null) {
@@ -505,7 +507,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
                 if (montoBaseGratuita == null) {
                     throw new ValidationException("El campo [" + totalValorVentaGratuitaLabel + "] es obligatorio, si ingresa valor en [" + totalImpOperGratuitaLabel + "]");
                 }
-                for (DetailsPaymentVoucherDto line : items) {
+                for (DetailsPaymentVoucherRequest line : items) {
                     existeProductoGratuito = false;
                     if(line.getMontoBaseGratuito() != null) {
                         existeProductoGratuito = paymentVoucherDetailValidator.validateOperacionGratuita(line.getMontoBaseGratuito(), line.getImpuestoVentaGratuita(), line.getPorcentajeTributoVentaGratuita(), line.getValorReferencialUnitario());
@@ -523,7 +525,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
         }
     }
 
-    private void validateTotalGravada(BigDecimal montoBaseGravada, BigDecimal montoIgv, List<DetailsPaymentVoucherDto> items) {
+    private void validateTotalGravada(BigDecimal montoBaseGravada, BigDecimal montoIgv, List<DetailsPaymentVoucherRequest> items) {
         boolean existeAlmenosUno = false;
         if (montoBaseGravada != null || montoIgv != null) {
             if (montoBaseGravada == null) {
@@ -532,7 +534,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
             if (montoIgv == null) {
                 throw new ValidationException("El campo [" + totalIgvLabel + "] es obligatorio, si ingresa valor en [" + totalValorVentaGravadaLabel + "]");
             }
-            for (DetailsPaymentVoucherDto line : items) {
+            for (DetailsPaymentVoucherRequest line : items) {
                 // Agrega lógica para contemplar el tipo de afectación IGV "30" (Inafecto - Operación Onerosa)
                 if ("30".equals(line.getCodigoTipoAfectacionIGV())) {
                     existeAlmenosUno = true;
@@ -555,7 +557,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
         }
     }
 
-    private void validateTotalOtrosTributos(BigDecimal montoBaseOtrosTributos, BigDecimal montoOtrosTributos, List<DetailsPaymentVoucherDto> items) {
+    private void validateTotalOtrosTributos(BigDecimal montoBaseOtrosTributos, BigDecimal montoOtrosTributos, List<DetailsPaymentVoucherRequest> items) {
         boolean existeAlmenosUno = false;
         if (montoBaseOtrosTributos != null || montoOtrosTributos != null) {
             if (montoBaseOtrosTributos == null) {
@@ -564,7 +566,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
             if (montoOtrosTributos == null) {
                 throw new ValidationException("El campo [" + totalOtrostributosLabel + "] es obligatorio, si ingresa valor en [" + totalValorBaseOtrosTributosLabel + "]");
             }
-            for (DetailsPaymentVoucherDto line : items) {
+            for (DetailsPaymentVoucherRequest line : items) {
                 existeAlmenosUno = paymentVoucherDetailValidator.validateOperacionOtrosTributos(line.getMontoBaseOtrosTributos(), line.getOtrosTributos(), line.getPorcentajeOtrosTributos());
                 if (existeAlmenosUno) {
                     break;
@@ -576,7 +578,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
         }
     }
 
-    private void validateDetracciones(PaymentVoucherDto paymentVoucherModel) {
+    private void validateDetracciones(PaymentVoucherRequest paymentVoucherModel) {
         boolean existeCodigoBien = false;
 
         if (paymentVoucherModel.getTipoComprobante().equals(ConstantesSunat.TIPO_DOCUMENTO_FACTURA)) {
@@ -609,7 +611,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
                         throw new ValidationException("El campo [" + porcentajeDetraccionLabel + "] es obligarorio.");
                     }
                     if (paymentVoucherModel.getCodigoBienDetraccion().equals("027")) {
-                        for (DetailsPaymentVoucherDto item : paymentVoucherModel.getItems()) {
+                        for (DetailsPaymentVoucherRequest item : paymentVoucherModel.getItems()) {
                             if (StringUtils.isBlank(item.getDetalleViajeDetraccion())) {
                                 throw new ValidationException("El campo [" + detalleViajeDetraccionLabel + "] es obligarorio, para codigo bien 027.");
                             }

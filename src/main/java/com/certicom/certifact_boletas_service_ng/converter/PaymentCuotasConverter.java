@@ -10,10 +10,14 @@ public class PaymentCuotasConverter {
 
     public static List<PaymentCuotasDto> requestListToDtoList(List<PaymentCuotasRequest> paymentCuotasRequests) {
         List<PaymentCuotasDto> paymentCuotasDtos = new ArrayList<>();
-        for (PaymentCuotasRequest paymentCuotasRequest : paymentCuotasRequests) {
-            paymentCuotasDtos.add(requestToDto(paymentCuotasRequest));
+        if(paymentCuotasRequests != null && !paymentCuotasRequests.isEmpty()) {
+            for (PaymentCuotasRequest paymentCuotasRequest : paymentCuotasRequests) {
+                paymentCuotasDtos.add(requestToDto(paymentCuotasRequest));
+            }
+            return paymentCuotasDtos;
+        } else {
+            return null;
         }
-        return paymentCuotasDtos;
     }
 
     public static PaymentCuotasDto requestToDto(PaymentCuotasRequest paymentCuotasRequest) {

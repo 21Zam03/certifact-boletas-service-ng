@@ -14,10 +14,12 @@ public class GuiaPaymentVoucherConverter {
 
     public static List<GuiaPaymentVoucherDto> requestListToDtoList(List<GuiaPaymentVoucherRequest> guiaPaymentVoucherRequests) {
         List<GuiaPaymentVoucherDto> guiaPaymentVoucherDtos = new ArrayList<>();
-        for (GuiaPaymentVoucherRequest guiaPaymentVoucherRequest : guiaPaymentVoucherRequests) {
-            guiaPaymentVoucherDtos.add(requestToDto(guiaPaymentVoucherRequest));
-        }
-        return guiaPaymentVoucherDtos;
+        if(guiaPaymentVoucherRequests != null && !guiaPaymentVoucherRequests.isEmpty()) {
+            for (GuiaPaymentVoucherRequest guiaPaymentVoucherRequest : guiaPaymentVoucherRequests) {
+                guiaPaymentVoucherDtos.add(requestToDto(guiaPaymentVoucherRequest));
+            }
+            return guiaPaymentVoucherDtos;
+        } else return null;
     }
 
 }

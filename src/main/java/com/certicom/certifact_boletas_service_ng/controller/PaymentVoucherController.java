@@ -1,5 +1,7 @@
 package com.certicom.certifact_boletas_service_ng.controller;
 
+import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
+import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
@@ -27,15 +29,20 @@ public class PaymentVoucherController {
     public ResponseEntity<?> savePaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
         Long idUsuario = 2L;
         watchLog(paymentVoucherRequest);
-        //paymentVoucherValidator.validate(paymentVoucherRequest, false);
+
+        paymentVoucherRequest.setUblVersion("2.1");
+        paymentVoucherValidator.validate(paymentVoucherRequest, false);
         Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, idUsuario);
-        return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
+        //return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     @PutMapping
     public ResponseEntity<?> editPaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
         Long idUsuario = 2L;
         watchLog(paymentVoucherRequest);
+
+        paymentVoucherRequest.setUblVersion("2.1");
         paymentVoucherValidator.validate(paymentVoucherRequest, true);
         Map<String, Object> result = paymentVoucherService.updatePaymentVoucher(paymentVoucherRequest,  idUsuario);
         return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);

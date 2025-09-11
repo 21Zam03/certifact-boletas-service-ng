@@ -3,6 +3,7 @@ package com.certicom.certifact_boletas_service_ng.validation;
 import com.certicom.certifact_boletas_service_ng.deserializer.InputField;
 import com.certicom.certifact_boletas_service_ng.dto.AnticipoPaymentDto;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
+import com.certicom.certifact_boletas_service_ng.request.AnticipoPaymentRequest;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -15,7 +16,7 @@ import java.math.BigDecimal;
 @Component
 public class AnticipoValidator extends InputField<Object> {
 
-    public void validateAnticipo(AnticipoPaymentDto anticipo) {
+    public void validateAnticipo(AnticipoPaymentRequest anticipo) {
         validateSerie(anticipo.getSerieAnticipo());
         validateNumero(anticipo.getNumeroAnticipo());
         validateMontoAnticipado(anticipo.getMontoAnticipo());

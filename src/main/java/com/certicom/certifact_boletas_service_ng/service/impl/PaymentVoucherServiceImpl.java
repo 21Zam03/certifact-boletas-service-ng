@@ -2,27 +2,39 @@ package com.certicom.certifact_boletas_service_ng.service.impl;
 
 import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
 import com.certicom.certifact_boletas_service_ng.dto.*;
+import com.certicom.certifact_boletas_service_ng.dto.others.IdentificadorComprobante;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
+import com.certicom.certifact_boletas_service_ng.dto.others.SendBoletaDto;
+import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
+import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
+import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
+import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
+import com.certicom.certifact_boletas_service_ng.exception.SignedException;
+import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
 import com.certicom.certifact_boletas_service_ng.feign.BranchOfficeFeign;
 import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
 import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
 import com.certicom.certifact_boletas_service_ng.feign.UserFeign;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
+import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
+import com.certicom.certifact_boletas_service_ng.service.DocumentsSummaryService;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
 import com.certicom.certifact_boletas_service_ng.service.TemplateService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
+import com.certicom.certifact_boletas_service_ng.util.UUIDGen;
+import com.certicom.certifact_boletas_service_ng.util.UtilArchivo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -35,6 +47,11 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final BranchOfficeFeign branchOfficeFeign;
     private final PaymentVoucherFeign paymentVoucherFeign;
     private final TemplateService templateService;
+    private final AmazonS3ClientService amazonS3ClientService;
+    private final DocumentsSummaryService documentsSummaryService;
+
+    @Value("${urlspublicas.descargaComprobante}")
+    private String urlServiceDownload;
 
     @Override
     public Map<String, Object> createPaymentVoucher(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
@@ -50,12 +67,14 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         Map<String, Object> resultado = new HashMap<>();
         ResponsePSE response;
         boolean status = false;
+        PaymentVoucherDto comprobanteCreado = null;
+        SendBoletaDto sendBoletaDto = null;
+        String messageResponse = ConstantesParameter.MSG_REGISTRO_DOCUMENTO_OK;
 
         try {
             PaymentVoucherDto paymentVoucherDto = PaymentVoucherConverter.requestToDto(paymentVoucher);
             paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
-            //Integer estadoItem = ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION;
-            //UserDto userLogged = userFeign.findUserById(idUsuario);
+            UserDto userLogged = userFeign.findUserById(idUsuario);
             CompanyDto companyDto = completarDatosEmisor(paymentVoucherDto);
             setCodigoTipoOperacionCatalog(paymentVoucherDto);
             setOficinaId(paymentVoucherDto, companyDto);
@@ -70,10 +89,141 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             }
 
             Map<String, String> plantillaGenerado = generarPlantillaXml(companyDto, paymentVoucherDto);
+            paymentVoucher.setCodigoHash(plantillaGenerado.get(ConstantesParameter.CODIGO_HASH));
+
+            RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
+
+            comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getId(), userLogged.getNombreUsuario());
+            sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
+
+            resultado.put(ConstantesParameter.PARAM_BEAN_SEND_BOLETA, sendBoletaDto);
+            status = true;
+        } catch (TemplateException | SignedException e) {
+            messageResponse = "Error al generar plantilla del documento[" + paymentVoucher.getIdentificadorDocumento() + "] " + e.getMessage();
         } catch (Exception e) {
-            log.error("ERROR: {}", e.getMessage());
+            messageResponse = e.getMessage();
         }
-        return null;
+        if(!status) {
+            throw new ServiceException(messageResponse);
+        }
+        response = createResponsePse(messageResponse, status, comprobanteCreado);
+
+        resultado.put("idPaymentVoucher", comprobanteCreado.getIdPaymentVoucher());
+        resultado.put(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE, response);
+
+        validateAutomaticDelivery((SendBoletaDto) resultado.get(ConstantesParameter.PARAM_BEAN_SEND_BOLETA));
+        return resultado;
+    }
+
+    private void validateAutomaticDelivery(SendBoletaDto sendBoletaDto) {
+        if (sendBoletaDto.getEnvioDirecto()){
+            ResponsePSE responsePSE;
+            try {
+                responsePSE = documentsSummaryService.generarSummaryByFechaEmisionAndRuc(
+                        sendBoletaDto.getRuc(),
+                        sendBoletaDto.getFechaEmision(),
+                        sendBoletaDto.getNameDocument(),
+                        sendBoletaDto.getUser()
+                );
+                if (responsePSE.getEstado()) {
+                    //messageProducer.produceProcessSummary(responsePSE.getTicket(), sendBoletaDto.getRuc());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void transformarUrlsAResponse(ResponsePSE response, PaymentVoucherDto paymentVoucherDto) {
+        if (paymentVoucherDto != null) {
+            String urlTicket = urlServiceDownload + "descargapdfuuid/" + paymentVoucherDto.getIdPaymentVoucher() + "/" + paymentVoucherDto.getUuid() + "/ticket/" + paymentVoucherDto.getIdentificadorDocumento();
+            String urlA4 = urlServiceDownload + "descargapdfuuid/" + paymentVoucherDto.getIdPaymentVoucher() + "/" + paymentVoucherDto.getUuid() + "/a4/" + paymentVoucherDto.getIdentificadorDocumento();
+            String urlXml = urlServiceDownload + "descargaxmluuid/" + paymentVoucherDto.getIdPaymentVoucher() + "/" + paymentVoucherDto.getUuid() + "/" + paymentVoucherDto.getIdentificadorDocumento();
+            response.setUrlPdfTicket(urlTicket);
+            response.setUrlPdfA4(urlA4);
+            response.setUrlXml(urlXml);
+            response.setCodigoHash(paymentVoucherDto.getCodigoHash());
+        }
+    }
+
+    private ResponsePSE createResponsePse(
+            String messageResponse, boolean status,
+            PaymentVoucherDto paymentVoucherModel) {
+        ResponsePSE response = ResponsePSE.builder()
+                .mensaje(messageResponse)
+                .estado(status)
+                .nombre(paymentVoucherModel.getIdentificadorDocumento())
+                .build();
+        transformarUrlsAResponse(response, paymentVoucherModel);
+        return response;
+    }
+
+    private SendBoletaDto createSendBoleta(CompanyDto companyDto, PaymentVoucherDto paymentVoucherDto) {
+        if(companyDto.getEnvioDirecto() != null && companyDto.getEnvioDirecto()) {
+            IdentificadorComprobante identificadorComprobante = IdentificadorComprobante.builder()
+                    .tipo(paymentVoucherDto.getTipoComprobante())
+                    .serie(paymentVoucherDto.getSerie())
+                    .numero(paymentVoucherDto.getNumero())
+                    .build();
+            SendBoletaDto sendBoletaDto = SendBoletaDto.builder()
+                    .ruc(paymentVoucherDto.getRucEmisor())
+                    .fechaEmision(paymentVoucherDto.getFechaEmision())
+                    .nameDocument(identificadorComprobante)
+                    .user(ConstantesParameter.USER_API_SCHEDULER)
+                    .envioDirecto(companyDto.getEnvioDirecto() != null && companyDto.getEnvioDirecto())
+                    .build();
+            return sendBoletaDto;
+        } else {
+            return null;
+        }
+    }
+
+    private PaymentVoucherDto saveVoucher(PaymentVoucherDto paymentVoucherDto, Long idRegisterFile, String nombreUsuario) {
+        paymentVoucherDto.setIdentificadorDocumento(paymentVoucherDto.getRucEmisor()+ "-" +paymentVoucherDto.getTipoComprobante()+ "-" +
+                paymentVoucherDto.getSerie()+ "-" +paymentVoucherDto.getNumero());
+        paymentVoucherDto.setEstado(EstadoComprobanteEnum.REGISTRADO.getCodigo());
+        paymentVoucherDto.setEstadoAnterior(EstadoComprobanteEnum.REGISTRADO.getCodigo());
+        paymentVoucherDto.setEstadoItem(ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION);
+        paymentVoucherDto.setEstadoSunat(EstadoSunatEnum.NO_ENVIADO.getAbreviado());
+        paymentVoucherDto.setMensajeRespuesta(ConstantesParameter.MSG_REGISTRO_DOCUMENTO_OK);
+        paymentVoucherDto.setFechaRegistro(new Timestamp(Calendar.getInstance().getTime().getTime()));
+        paymentVoucherDto.setUserName(nombreUsuario);
+        paymentVoucherDto.setFechaModificacion(null);
+        paymentVoucherDto.setUserNameModificacion(null);
+
+        if (idRegisterFile != null) {
+            paymentVoucherDto.addPaymentVoucherFile(PaymentVoucherFileDto.builder()
+                    .orden(1)
+                    .estadoArchivo(EstadoArchivoEnum.ACTIVO.name())
+                    .idRegisterFileSend(idRegisterFile)
+                    .tipoArchivo(TipoArchivoEnum.XML.name())
+                    .build());
+        }
+
+        for (DetailsPaymentVoucherDto item : paymentVoucherDto.getItems()) {
+            item.setEstado(ConstantesParameter.REGISTRO_ACTIVO);
+        }
+
+        if (nombreUsuario != null && paymentVoucherDto.getOficinaId() == null) {
+            if (!nombreUsuario.equals(ConstantesSunat.SUPERADMIN)) {
+                UserDto user = userFeign.findUserByUsername(nombreUsuario);
+                paymentVoucherDto.setOficinaId(user.getIdOficina());
+            }
+        }
+
+        paymentVoucherDto.setUuid(UUIDGen.generate());
+        paymentVoucherDto.setFechaEmisionDate(new Date());
+
+        return paymentVoucherFeign.save(paymentVoucherDto);
+    }
+
+    private RegisterFileUploadDto subirXmlComprobante(CompanyDto companyDto, Map<String, String> plantillaGenerado) {
+        String nombreDocumento = plantillaGenerado.get(ConstantesParameter.PARAM_NAME_DOCUMENT);
+        String fileXMLZipBase64 = plantillaGenerado.get(ConstantesParameter.PARAM_FILE_ZIP_BASE64);
+        RegisterFileUploadDto archivo = amazonS3ClientService.subirArchivoAlStorage(UtilArchivo.b64ToByteArrayInputStream(fileXMLZipBase64),
+                nombreDocumento, "invoice", companyDto);
+        log.info("ARVHIVO SUBIDO: {}", archivo.toString());
+        return archivo;
     }
 
     private Map<String, String> generarPlantillaXml(CompanyDto companyDto, PaymentVoucherDto paymentVoucherDto) throws IOException, NoSuchAlgorithmException {
