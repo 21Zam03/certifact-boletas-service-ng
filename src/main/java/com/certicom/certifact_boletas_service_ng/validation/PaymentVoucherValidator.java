@@ -258,6 +258,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
             int proximo = paymentVoucherFeign.
                     obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(tipoComprobante, serie, rucEmisor);
             System.out.println("PROXIMO: "+proximo);
+            System.out.println("NUMERO: "+numero);
             if (proximo > 1){
                 int diferencia = numero - proximo;
                 if (diferencia > 120){

@@ -13,10 +13,7 @@ import java.io.Serializable;
 @Builder
 public class AditionalFieldPaymentVoucherRequest implements Serializable {
 
-    private Integer id;
     private String nombreCampo;
     private String valorCampo;
-    private Integer typeFieldId;
-    private Long idPaymentVoucher;
 
 }

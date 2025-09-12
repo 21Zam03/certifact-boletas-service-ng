@@ -7,7 +7,6 @@ public class PaymentVoucherConverter {
 
     public static PaymentVoucherDto requestToDto(PaymentVoucherRequest paymentVoucherRequest) {
         return PaymentVoucherDto.builder()
-                .ublVersion("2.1")
                 .rucEmisor(paymentVoucherRequest.getRucEmisor())
                 .tipoComprobante(paymentVoucherRequest.getTipoComprobante())
                 .serie(paymentVoucherRequest.getSerie())

@@ -5,6 +5,7 @@ import com.certicom.certifact_boletas_service_ng.dto.*;
 import com.certicom.certifact_boletas_service_ng.dto.others.IdentificadorComprobante;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
 import com.certicom.certifact_boletas_service_ng.dto.others.SendBoletaDto;
+import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
@@ -63,6 +64,37 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         return Map.of();
     }
 
+    @Override
+    public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante) {
+        Map<String, Object> result = new HashMap<>();
+        List<Long> ids = new ArrayList<>();
+        log.info("SUMMARY 1 {} {} {}", fechaEmision, rucEmisor, comprobante);
+
+        Summary summary = buildSummaryDocumentsByFechaEmision(fechaEmision, rucEmisor, comprobante, ids);
+        log.info("SUMMARY RESULT: {}", summary);
+        result.put(ConstantesParameter.PARAM_BEAN_SUMMARY, summary);
+        result.put(ConstantesParameter.PARAM_LIST_IDS, ids);
+        return result;
+    }
+
+    private Summary buildSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante, List<Long> ids) {
+        Summary summaryByDay = null;
+        Integer correlativoSummary = null;
+        Integer correlativoSummaryDto = null;
+        CompanyDto company = companyFeign.findCompanyByRuc(rucEmisor);
+        String tipoDocumentoEmisor = ConstantesSunat.TIPO_DOCUMENTO_IDENTIDAD_RUC;
+        String denominacionEmisor = company.getRazon();
+        System.out.println(company.getRazon());
+        List<PaymentVoucherDto> comprobantes = new ArrayList<>();
+        List<PaymentVoucherDto> comprobantesDto = new ArrayList<>();
+
+        if(comprobante != null && comprobante.getTipo() != null && comprobante.getSerie() != null && comprobante.getNumero() != null) {
+            comprobantesDto = paymentVoucherFeign.getListPaymentVoucherSpecificForSummaryDto(
+                    rucEmisor, fechaEmision, comprobante.getTipo(), comprobante.getSerie(), comprobante.getNumero());
+        }
+
+    }
+
     private Map<String, Object> generateNewDocument(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
         Map<String, Object> resultado = new HashMap<>();
         ResponsePSE response;
@@ -94,6 +126,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
 
             comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getId(), userLogged.getNombreUsuario());
+            System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
             sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
 
             resultado.put(ConstantesParameter.PARAM_BEAN_SEND_BOLETA, sendBoletaDto);
@@ -116,7 +149,8 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     }
 
     private void validateAutomaticDelivery(SendBoletaDto sendBoletaDto) {
-        if (sendBoletaDto.getEnvioDirecto()){
+        System.out.println("SEND BOLETA DTO: "+sendBoletaDto);
+        if(sendBoletaDto!=null && sendBoletaDto.getEnvioDirecto()) {
             ResponsePSE responsePSE;
             try {
                 responsePSE = documentsSummaryService.generarSummaryByFechaEmisionAndRuc(
@@ -159,7 +193,8 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     }
 
     private SendBoletaDto createSendBoleta(CompanyDto companyDto, PaymentVoucherDto paymentVoucherDto) {
-        if(companyDto.getEnvioDirecto() != null && companyDto.getEnvioDirecto()) {
+        System.out.println("COMPANY: "+companyDto);
+        if(companyDto.getEnvioAutomaticoSunat()!= null && companyDto.getEnvioAutomaticoSunat()) {
             IdentificadorComprobante identificadorComprobante = IdentificadorComprobante.builder()
                     .tipo(paymentVoucherDto.getTipoComprobante())
                     .serie(paymentVoucherDto.getSerie())
@@ -170,8 +205,9 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
                     .fechaEmision(paymentVoucherDto.getFechaEmision())
                     .nameDocument(identificadorComprobante)
                     .user(ConstantesParameter.USER_API_SCHEDULER)
-                    .envioDirecto(companyDto.getEnvioDirecto() != null && companyDto.getEnvioDirecto())
+                    .envioDirecto(companyDto.getEnvioAutomaticoSunat() != null && companyDto.getEnvioAutomaticoSunat())
                     .build();
+            System.out.println("sendboleta: "+sendBoletaDto);
             return sendBoletaDto;
         } else {
             return null;
@@ -270,6 +306,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             try {
                 BranchOfficesDto branchOfficesModel = branchOfficeFeign.obtenerOficinaPorEmpresaIdYSerieYTipoComprobante(
                         companyModel.getId(), comprobante.getSerie(), comprobante.getTipoComprobante());
+                System.out.println("ID OFICINA: "+branchOfficesModel);
                 if(branchOfficesModel !=null) {
                     if (branchOfficesModel.getId() != null) {
                         comprobante.setOficinaId(branchOfficesModel.getId());

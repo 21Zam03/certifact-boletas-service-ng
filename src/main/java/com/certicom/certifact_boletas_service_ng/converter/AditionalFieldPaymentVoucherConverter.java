@@ -21,7 +21,10 @@ public class AditionalFieldPaymentVoucherConverter {
     }
 
     public static AditionalFieldPaymentVoucherDto requestToDto(AditionalFieldPaymentVoucherRequest aditionalFieldPaymentVoucherRequest) {
-        return AditionalFieldPaymentVoucherDto.builder().build();
+        return AditionalFieldPaymentVoucherDto.builder()
+                .nombreCampo(aditionalFieldPaymentVoucherRequest.getNombreCampo())
+                .valorCampo(aditionalFieldPaymentVoucherRequest.getValorCampo())
+                .build();
     }
 
 }
