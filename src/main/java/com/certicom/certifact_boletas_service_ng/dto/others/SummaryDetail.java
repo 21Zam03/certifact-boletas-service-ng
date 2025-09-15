@@ -37,4 +37,5 @@ public class SummaryDetail {
     private BigDecimal totalValorVentaOperacionGravada;
     private BigDecimal totalValorVentaOperacionInafecta;
 
+    private String estado;
 }

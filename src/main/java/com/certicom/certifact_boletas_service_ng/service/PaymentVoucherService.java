@@ -10,6 +10,6 @@ public interface PaymentVoucherService {
     Map<String, Object> createPaymentVoucher(PaymentVoucherRequest paymentVoucher, Long idUsuario);
     Map<String, Object> updatePaymentVoucher(PaymentVoucherRequest paymentVoucher, Long idUsuario);
 
-    public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante);
+    //public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante);
 
 }

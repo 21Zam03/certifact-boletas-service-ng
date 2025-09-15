@@ -7,6 +7,6 @@ import java.io.InputStream;
 
 public interface AmazonS3ClientService {
 
-    RegisterFileUploadDto subirArchivoAlStorage(InputStream inputStream, String nameFile, String folder, CompanyDto companyDto);
+    RegisterFileUploadDto uploadFileStorage(InputStream inputStream, String nameFile, String folder, CompanyDto companyDto);
 
 }

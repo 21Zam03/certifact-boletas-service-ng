@@ -37,7 +37,7 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
     private String baseUrl;
 
     @Override
-    public RegisterFileUploadDto subirArchivoAlStorage(InputStream inputStream, String nameFile, String folder, CompanyDto companyDto) {
+    public RegisterFileUploadDto uploadFileStorage(InputStream inputStream, String nameFile, String folder, CompanyDto companyDto) {
         System.out.println("NOMBRE DEL ARCHIVO "+nameFile);
         String periodo = UtilDate.dateNowToString("MMyyyy ");
 

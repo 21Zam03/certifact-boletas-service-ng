@@ -2,10 +2,7 @@ package com.certicom.certifact_boletas_service_ng.service.impl;
 
 import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
 import com.certicom.certifact_boletas_service_ng.dto.*;
-import com.certicom.certifact_boletas_service_ng.dto.others.IdentificadorComprobante;
-import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
-import com.certicom.certifact_boletas_service_ng.dto.others.SendBoletaDto;
-import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
+import com.certicom.certifact_boletas_service_ng.dto.others.*;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
@@ -13,10 +10,7 @@ import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
 import com.certicom.certifact_boletas_service_ng.exception.SignedException;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
-import com.certicom.certifact_boletas_service_ng.feign.BranchOfficeFeign;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
-import com.certicom.certifact_boletas_service_ng.feign.UserFeign;
+import com.certicom.certifact_boletas_service_ng.feign.*;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
@@ -36,6 +30,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -50,6 +45,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final TemplateService templateService;
     private final AmazonS3ClientService amazonS3ClientService;
     private final DocumentsSummaryService documentsSummaryService;
+    private final SummaryDocumentsFeign summaryDocumentsFeign;
 
     @Value("${urlspublicas.descargaComprobante}")
     private String urlServiceDownload;
@@ -64,6 +60,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         return Map.of();
     }
 
+    /*
     @Override
     public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante) {
         Map<String, Object> result = new HashMap<>();
@@ -76,8 +73,10 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         result.put(ConstantesParameter.PARAM_LIST_IDS, ids);
         return result;
     }
+    * */
 
-    private Summary buildSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante, List<Long> ids) {
+    /*
+        private Summary buildSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante, List<Long> ids) {
         Summary summaryByDay = null;
         Integer correlativoSummary = null;
         Integer correlativoSummaryDto = null;
@@ -89,12 +88,105 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         List<PaymentVoucherDto> comprobantesDto = new ArrayList<>();
 
         if(comprobante != null && comprobante.getTipo() != null && comprobante.getSerie() != null && comprobante.getNumero() != null) {
-            comprobantesDto = paymentVoucherFeign.getListPaymentVoucherSpecificForSummaryDto(
+            comprobantesDto = paymentVoucherFeign.findListSpecificForSummary(
                     rucEmisor, fechaEmision, comprobante.getTipo(), comprobante.getSerie(), comprobante.getNumero());
+        } else {
+            List<PaymentVoucherDto> listPaymentVoucherDto = paymentVoucherFeign
+                    .findAllForSummaryByRucEmisorAndFechaEmision(rucEmisor, fechaEmision);
+            System.out.println(listPaymentVoucherDto.size());
+            comprobantesDto = listPaymentVoucherDto.subList(0, Math.min(listPaymentVoucherDto.size(), 400));
         }
 
+        if (comprobantesDto != null && !comprobantesDto.isEmpty()) {
+            correlativoSummaryDto = summaryDocumentsFeign.getSequentialNumberInSummaryByFechaEmision(rucEmisor,
+                    fechaEmision);
+            correlativoSummaryDto++;
+            int numeroLinea = 0;
+
+            List<SummaryDetail> details = new ArrayList<SummaryDetail>();
+
+            summaryByDay = Summary.builder()
+                    .fechaEmision(fechaEmision)
+                    .nroResumenDelDia(correlativoSummaryDto)
+                    .rucEmisor(rucEmisor)
+                    .denominacionEmisor(denominacionEmisor)
+                    .tipoDocumentoEmisor(tipoDocumentoEmisor)
+                    .build();
+
+            List<PaymentVoucherDto> comprobantesTemp;
+            comprobantesTemp = comprobantesDto.stream().filter(com -> com.getBoletaAnuladaSinEmitir() !=
+                    null && com.getBoletaAnuladaSinEmitir()).toList();
+
+            for (PaymentVoucherDto payment : comprobantesTemp) {
+
+                SummaryDetail detail = new SummaryDetail();
+                numeroLinea++;
+
+                detail.setNumeroItem(numeroLinea);
+                detail.setSerie(payment.getSerie());
+                detail.setNumero(payment.getNumero());
+                detail.setTipoComprobante(payment.getTipoComprobante());
+                detail.setCodigoMoneda(payment.getCodigoMoneda());
+                detail.setTipoDocumentoReceptor(payment.getTipoDocumentoReceptor());
+                detail.setNumeroDocumentoReceptor(payment.getNumeroDocumentoReceptor());
+                if (payment.getCodigoTipoNotaCredito() != null || payment.getCodigoTipoNotaDebito() != null) {
+                    detail.setSerieAfectado(payment.getSerieAfectado());
+                    detail.setNumeroAfectado(payment.getNumeroAfectado());
+                    detail.setTipoComprobanteAfectado(payment.getTipoComprobanteAfectado());
+                }
+                detail.setStatusItem(ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION);
+                detail.setImporteTotalVenta(payment.getImporteTotalVenta());
+                detail.setSumatoriaOtrosCargos(payment.getSumatoriaOtrosCargos());
+                detail.setTotalIGV(payment.getTotalIgv());
+                detail.setTotalISC(payment.getTotalIsc());
+                detail.setTotalOtrosTributos(payment.getTotalOtrostributos());
+                detail.setTotalValorVentaOperacionExportacion(payment.getTotalValorVentaExportacion());
+                detail.setTotalValorVentaOperacionGravada(payment.getTotalValorVentaGravada());
+                detail.setTotalValorVentaOperacionInafecta(payment.getTotalValorVentaInafecta());
+                detail.setTotalValorVentaOperacionExonerado(payment.getTotalValorVentaExonerada());
+                detail.setTotalValorVentaOperacionGratuita(payment.getTotalValorVentaGratuita());
+
+                details.add(detail);
+            }
+            for (PaymentVoucherDto payment : comprobantesDto) {
+
+                SummaryDetail detail = new SummaryDetail();
+                numeroLinea++;
+                payment.getEstadoItem();
+                detail.setNumeroItem(numeroLinea);
+                detail.setSerie(payment.getSerie());
+                detail.setNumero(payment.getNumero());
+                detail.setTipoComprobante(payment.getTipoComprobante());
+                detail.setCodigoMoneda(payment.getCodigoMoneda());
+                detail.setTipoDocumentoReceptor(payment.getTipoDocumentoReceptor());
+                detail.setNumeroDocumentoReceptor(payment.getNumeroDocumentoReceptor());
+                if (payment.getCodigoTipoNotaCredito() != null || payment.getCodigoTipoNotaDebito() != null) {
+                    detail.setSerieAfectado(payment.getSerieAfectado());
+                    detail.setNumeroAfectado(payment.getNumeroAfectado());
+                    detail.setTipoComprobanteAfectado(payment.getTipoComprobanteAfectado());
+                }
+                detail.setStatusItem(payment.getEstadoItem());
+                detail.setImporteTotalVenta(payment.getImporteTotalVenta());
+                detail.setSumatoriaOtrosCargos(payment.getSumatoriaOtrosCargos());
+                detail.setTotalIGV(payment.getTotalIgv());
+                detail.setTotalISC(payment.getTotalIsc());
+                detail.setTotalOtrosTributos(payment.getTotalOtrostributos());
+                detail.setTotalValorVentaOperacionExportacion(payment.getTotalValorVentaExportacion());
+                detail.setTotalValorVentaOperacionGravada(payment.getTotalValorVentaGravada());
+                detail.setTotalValorVentaOperacionInafecta(payment.getTotalValorVentaInafecta());
+                detail.setTotalValorVentaOperacionExonerado(payment.getTotalValorVentaExonerada());
+                detail.setTotalValorVentaOperacionGratuita(payment.getTotalValorVentaGratuita());
+                details.add(detail);
+                ids.add(payment.getIdPaymentVoucher());
+            }
+
+            summaryByDay.setItems(details);
+        } else throw new ServiceException("No existen comprobantes para generar este resumen [" + fechaEmision + "]");
+        return summaryByDay;
     }
 
+
+* */
     private Map<String, Object> generateNewDocument(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
         Map<String, Object> resultado = new HashMap<>();
         ResponsePSE response;
@@ -125,7 +217,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
             RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
 
-            comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getId(), userLogged.getNombreUsuario());
+            comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getIdRegisterFileSend(), userLogged.getNombreUsuario());
             System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
             sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
 
@@ -160,6 +252,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
                         sendBoletaDto.getUser()
                 );
                 if (responsePSE.getEstado()) {
+                    System.out.println("Se envio boleta por resumen diario de manera automatica");
                     //messageProducer.produceProcessSummary(responsePSE.getTicket(), sendBoletaDto.getRuc());
                 }
             } catch (Exception e) {
@@ -256,7 +349,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private RegisterFileUploadDto subirXmlComprobante(CompanyDto companyDto, Map<String, String> plantillaGenerado) {
         String nombreDocumento = plantillaGenerado.get(ConstantesParameter.PARAM_NAME_DOCUMENT);
         String fileXMLZipBase64 = plantillaGenerado.get(ConstantesParameter.PARAM_FILE_ZIP_BASE64);
-        RegisterFileUploadDto archivo = amazonS3ClientService.subirArchivoAlStorage(UtilArchivo.b64ToByteArrayInputStream(fileXMLZipBase64),
+        RegisterFileUploadDto archivo = amazonS3ClientService.uploadFileStorage(UtilArchivo.b64ToByteArrayInputStream(fileXMLZipBase64),
                 nombreDocumento, "invoice", companyDto);
         log.info("ARVHIVO SUBIDO: {}", archivo.toString());
         return archivo;

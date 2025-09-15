@@ -90,10 +90,7 @@ public class PaymentVoucherDto {
     private BigDecimal montoPendiente;
     private BigDecimal cantidadCuotas;
     private BigDecimal pagoCuenta;
-
     private String idpay;
-
-    /**/
     private String estado;
     private String estadoAnterior;
     private Integer estadoItem;
@@ -108,6 +105,7 @@ public class PaymentVoucherDto {
     private String serieNumeroDocumentoRelacionado;
     private String Uuid;
     private Date fechaEmisionDate;
+    private Boolean boletaAnuladaSinEmitir;
 
     private List<PaymentVoucherFileDto> paymentVoucherFileModelList;
 

@@ -2,6 +2,7 @@ package com.certicom.certifact_boletas_service_ng.service.impl;
 
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.dto.others.SignatureResp;
+import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
 import com.certicom.certifact_boletas_service_ng.dto.others.Voided;
 import com.certicom.certifact_boletas_service_ng.exception.SignedException;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
@@ -10,13 +11,11 @@ import com.certicom.certifact_boletas_service_ng.signed.Signed;
 import com.certicom.certifact_boletas_service_ng.templates.template.BoletaTemplate;
 import com.certicom.certifact_boletas_service_ng.templates.template.NotaCreditoTemplate;
 import com.certicom.certifact_boletas_service_ng.templates.template.NotaDebitoTemplate;
+import com.certicom.certifact_boletas_service_ng.templates.template.SummaryTemplate;
 import com.certicom.certifact_boletas_service_ng.templates.template21.BoletaTemplate21;
 import com.certicom.certifact_boletas_service_ng.templates.template21.NotaCreditoTemplate21;
 import com.certicom.certifact_boletas_service_ng.templates.template21.NotaDebitoTemplate21;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
-import com.certicom.certifact_boletas_service_ng.util.UtilArchivo;
-import com.certicom.certifact_boletas_service_ng.util.UtilConversion;
+import com.certicom.certifact_boletas_service_ng.util.*;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -41,6 +40,7 @@ public class TemplateServiceImpl implements TemplateService {
     private final NotaCreditoTemplate21 notaCreditoTemplate21;
     private final NotaDebitoTemplate notaDebitoTemplate;
     private final NotaDebitoTemplate21 notaDebitoTemplate21;
+    private final SummaryTemplate summaryTemplate;
 
     @Override
     public Map<String, String> buildPaymentVoucherSignOse(PaymentVoucherDto paymentVoucherModel) {
@@ -111,6 +111,32 @@ public class TemplateServiceImpl implements TemplateService {
         return Collections.emptyMap();
     }
 
+    @Override
+    public Map<String, String> buildSummaryDailySign(Summary summary) throws TemplateException, SignedException, IOException, NoSuchAlgorithmException {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, String> buildSummaryDailySignOse(Summary summary) throws TemplateException, SignedException, IOException, NoSuchAlgorithmException {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, String> buildSummaryDailySignCerti(Summary summary) throws TemplateException, SignedException, IOException, NoSuchAlgorithmException {
+        Map<String, String> resp;
+        String xml;
+
+        xml = summaryTemplate.buildSummary(summary);
+
+        SignatureResp response = signed.signCerticom(xml, UtilFormat.concat("S-", summary.getSignId()));
+        String nameDocument = UtilFormat.concat(summary.getRucEmisor(),
+                "-", summary.getId());
+
+        resp = buildDataTemplate(response, nameDocument);
+
+        return resp;
+    }
+
     private Map<String, String> buildDataTemplate(SignatureResp signatureResp, String nombreDocumento) throws SignedException, IOException, NoSuchAlgorithmException {
 
         Map<String, String> resp;
@@ -136,7 +162,6 @@ public class TemplateServiceImpl implements TemplateService {
 
         return resp;
     }
-
     private String getFileChecksum(MessageDigest digest, File file) throws IOException {
         //Get file input stream for reading the file content
 

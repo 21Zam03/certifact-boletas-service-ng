@@ -15,7 +15,7 @@ public class RegisterFileUploadDto {
 
     private static final long serialVersionUID = 1L;
 
-    private Long id;
+    private Long idRegisterFileSend;
     private String extension;
     private Timestamp fechaUpload;
     private String bucket;

@@ -2,10 +2,10 @@ package com.certicom.certifact_boletas_service_ng.feign;
 
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Timestamp;
+import java.util.List;
 
 @FeignClient(name = "boletas-service-sp", url = "http://localhost:8092", contextId = "paymentVoucher")
 public interface PaymentVoucherFeign {
@@ -20,5 +20,24 @@ public interface PaymentVoucherFeign {
 
     @PostMapping("/api/payment-voucher")
     public PaymentVoucherDto save(@RequestBody PaymentVoucherDto paymentVoucherDto);
+
+    @GetMapping("/api/payment-voucher/specific-summary")
+    public List<PaymentVoucherDto> findListSpecificForSummary(
+            @RequestParam String rucEmisor,
+            @RequestParam String fechaEmision,
+            @RequestParam String tipo,
+            @RequestParam String serie,
+            @RequestParam Integer numero);
+
+    @GetMapping("/api/payment-voucher/summary-ruc-date")
+    public List<PaymentVoucherDto> findAllForSummaryByRucEmisorAndFechaEmision(
+            @RequestParam String rucEmisor, @RequestParam String fechaEmision);
+
+    @PutMapping("state")
+    public void updateStateToSendSunatForSummaryDocuments(
+            @RequestParam("ids") List<Long> ids,
+            @RequestParam("usuario") String usuario,
+            @RequestParam("fechaModificacion") Timestamp fechaModificacion
+    );
 
 }
