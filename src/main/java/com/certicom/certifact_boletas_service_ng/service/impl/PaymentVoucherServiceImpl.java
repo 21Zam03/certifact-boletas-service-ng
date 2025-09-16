@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,7 +44,6 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final TemplateService templateService;
     private final AmazonS3ClientService amazonS3ClientService;
     private final DocumentsSummaryService documentsSummaryService;
-    private final SummaryDocumentsFeign summaryDocumentsFeign;
 
     @Value("${urlspublicas.descargaComprobante}")
     private String urlServiceDownload;
