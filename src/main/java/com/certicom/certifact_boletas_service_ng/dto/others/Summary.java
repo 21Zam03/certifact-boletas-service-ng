@@ -1,6 +1,5 @@
 package com.certicom.certifact_boletas_service_ng.dto.others;
 
-import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherFileDto;
 import com.certicom.certifact_boletas_service_ng.dto.SummaryFileDto;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;

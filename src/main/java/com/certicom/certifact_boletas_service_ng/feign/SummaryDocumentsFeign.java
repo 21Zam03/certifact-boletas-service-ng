@@ -14,6 +14,6 @@ public interface SummaryDocumentsFeign {
     public Integer getSequentialNumberInSummaryByFechaEmision(@RequestParam String rucEmisor, @RequestParam String fechaEmision);
 
     @PostMapping
-    public Summary save(@RequestBody Summary summary);
+    public Summary save(@RequestBody Summary summaryDto);
 
 }

@@ -324,10 +324,13 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
 
         summaryDocumentsFeign.save(summary);
         paymentVoucherFeign.updateStateToSendSunatForSummaryDocuments(ids, usuario, fechaEjecucion);
+        System.out.println("PASO SIN PROBLEMAS");
     }
 
     private Map<String, String> getTemplateGenerated(String rucEmisor, Summary summary) throws IOException, NoSuchAlgorithmException {
+        System.out.println("RUC EMISOR: "+rucEmisor);
         OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+        System.out.println("OSE: "+ose);
         if (ose != null && ose.getId()==1) {
             return templateService.buildSummaryDailySignOse(summary);
         } else if (ose != null && (ose.getId()==10||ose.getId()==12)) {
