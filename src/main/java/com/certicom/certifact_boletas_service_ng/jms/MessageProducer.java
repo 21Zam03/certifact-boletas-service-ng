@@ -17,10 +17,10 @@ import java.io.Serializable;
 @Slf4j
 @Component
 public class MessageProducer {
-
+/*
     @Resource
     protected JmsTemplate jmsTemplate;
-
+*/
     @Resource
     ObjectMapper objectMapper;
 
@@ -59,7 +59,7 @@ public class MessageProducer {
 
     @Value("${apifact.aws.sqs.emailExcelSender}")
     private String emailExcelSender;
-
+/*
     public void produceProcessSummary(String ticket, String rucEmisor) {
         try {
             send(processSummary, ticket);
@@ -88,5 +88,5 @@ public class MessageProducer {
         });
 
     }
-
+*/
 }

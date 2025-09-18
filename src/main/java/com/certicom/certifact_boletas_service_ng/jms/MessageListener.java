@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MessageListener {
 
+    /*
     private final DocumentsSummaryService documentsSummaryService;
     private final MessageProducer messageProducer;
 
@@ -42,5 +43,5 @@ public class MessageListener {
         }
 
     }
-
+*/
 }

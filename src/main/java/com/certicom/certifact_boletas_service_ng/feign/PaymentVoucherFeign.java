@@ -40,9 +40,24 @@ public interface PaymentVoucherFeign {
             @RequestParam("fechaModificacion") Timestamp fechaModificacion
     );
 
-    void updateComprobantesBySummaryDocuments(List<String> comprobantesByAceptar, String codigo, String abreviado, String usuario, Timestamp fechaModificacion);
+    @PutMapping("/ss")
+    void updateComprobantesBySummaryDocuments(
+            @RequestParam List<String> comprobantesByAceptar,
+            @RequestParam String codigo,
+            @RequestParam String abreviado,
+            @RequestParam String usuario,
+            @RequestParam Timestamp fechaModificacion);
 
-    void updateComprobantesOnResumenError(List<String> identificadoresComprobantes, String usuario, Timestamp fechaModificacion);
+    @PutMapping("/aa")
+    void updateComprobantesOnResumenError(
+            @RequestParam List<String> identificadoresComprobantes,
+            @RequestParam String usuario,
+            @RequestParam Timestamp fechaModificacion);
 
-    PaymentVoucherDto findByRucAndTipoAndSerieAndNumeroInter(String finalRucEmisor, String tipoComprobante, String serie, Integer numero);
+    @GetMapping("/oo")
+    PaymentVoucherDto findByRucAndTipoAndSerieAndNumeroInter(
+            @RequestParam String finalRucEmisor,
+            @RequestParam String tipoComprobante,
+            @RequestParam String serie,
+            @RequestParam Integer numero);
 }

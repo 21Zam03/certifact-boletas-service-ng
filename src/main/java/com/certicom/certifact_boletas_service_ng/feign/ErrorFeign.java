@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "boletas-service-sp", url = "http://localhost:8092", contextId = "error_catalog")
+@FeignClient(name = "boletas-service-sp", url = "http://localhost:8092", contextId = "errorCatalog")
 public interface ErrorFeign {
 
     @GetMapping("/error")
