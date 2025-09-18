@@ -25,7 +25,6 @@ import com.certicom.certifact_boletas_service_ng.util.UtilArchivo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -44,11 +43,13 @@ public class StatusServiceImpl implements StatusService {
     private final PaymentVoucherFeign paymentVoucherFeign;
 
     @Override
-    @Transactional
     public ResponsePSE getStatus(String numeroTicket, String tipoResumen, String userName, String rucEmisor) {
         ResponseSunat respSunat;
         ResponsePSE resp = null;
-
+        System.out.println("NUMERO TICKET: "+numeroTicket);
+        System.out.println("TIPO RESUMEN: "+tipoResumen);
+        System.out.println("USERNAME: "+userName);
+        System.out.println("RUC EMISOR: "+rucEmisor);
         try {
             resp = new ResponsePSE();
             respSunat = sunatService.getStatus(numeroTicket, tipoResumen, rucEmisor);

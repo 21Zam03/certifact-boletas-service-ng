@@ -38,14 +38,21 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
 
     @Override
     public RegisterFileUploadDto uploadFileStorage(InputStream inputStream, String nameFile, String folder, CompanyDto companyDto) {
-        System.out.println("NOMBRE DEL ARCHIVO "+nameFile);
-        String periodo = UtilDate.dateNowToString("MMyyyy ");
+        System.out.println("NOMBRE DEL ARCHIVO " + nameFile);
+        String periodo = UtilDate.dateNowToString("MMyyyy");
 
-        String fileNameKey = String.format("%s-%s", UUID.randomUUID(), nameFile);
-        String bucket = String.format("%s/archivos/%s/%s/%s", this.bucketName, companyDto.getRuc(), folder, periodo);
+        // ✅ Bucket fijo (sin '/')
+        String bucket = this.bucketName;
+
+        // ✅ Key (ruta dentro del bucket)
+        String fileNameKey = String.format("archivos/%s/%s/%s/%s-%s",
+                companyDto.getRuc(),
+                folder,
+                periodo,
+                UUID.randomUUID(),
+                nameFile);
 
         try {
-
             StopWatch watch = new StopWatch();
             watch.start();
 
@@ -61,20 +68,21 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
             inputStream.reset();
 
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, fileNameKey, inputStream, metadata);
-
             this.s3client.putObject(putObjectRequest);
 
             RegisterFileUploadDto resp = registerFileUploadFeign.saveRegisterFileUpload(RegisterFileUploadDto.builder()
                     .estado("A")
-                    .bucket(bucket)
-                    .nombreGenerado(fileNameKey)
+                    .bucket(bucket)                // 👈 solo el bucket real
+                    .nombreGenerado(fileNameKey)   // 👈 aquí guardas la "ruta" completa
                     .nombreOriginal(nameFile)
                     .codCompany(companyDto.getId())
                     .fechaUpload(new Timestamp(System.currentTimeMillis()))
                     .build());
+
             watch.stop();
             log.info(String.format("%s %s %s", "Tiempo de Subida de archivo:", nameFile, watch.getTime()));
             return resp;
+
         } catch (Exception ex) {
             ex.printStackTrace();
             log.error("error [" + ex.getMessage() + "] occurred while uploading [" + nameFile + "] ");

@@ -138,17 +138,17 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
     @Override
     public ResponsePSE processSummaryTicket(String ticket, String useName, String rucEmisor) {
         ResponsePSE responsePSE = null;
-        List<Object[]> data;
+        List<RucEstadoOther> data;
 
         String estado = null;
         data = summaryDocumentsFeign.getEstadoAndRucEmisorByNumeroTicket(ticket);
-
-        Object[] dataReg = data.get(0);
-        rucEmisor = (String) dataReg[0];
-        estado = (String) dataReg[1];
+        System.out.println("DATA: "+data);
+        rucEmisor = data.get(0).getRucEmisor();
+        estado = data.get(0).getEstado();
 
         if (estado.equals(ConstantesParameter.STATE_SUMMARY_VOIDED_DOCUMENTS_IN_PROCESO)) {
             responsePSE = statusService.getStatus(ticket, ConstantesSunat.RESUMEN_DIARIO_BOLETAS, useName, rucEmisor);
+            System.out.println("RESPONSE: "+ responsePSE);
         } else {
             responsePSE = new ResponsePSE();
             responsePSE.setRespuesta(estado);
@@ -346,11 +346,9 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
             summaryEntity.addDetailDocsSummary(detail);
             */
         }
-
+        System.out.println("TICKET SUNAT: {}"+summary.getTicketSunat());
         summaryDocumentsFeign.save(summary);
         paymentVoucherFeign.updateStateToSendSunatForSummaryDocuments(ids, usuario, fechaEjecucion);
-
-        System.out.println("PASO SIN PROBLEMAS");
     }
 
     private Map<String, String> getTemplateGenerated(String rucEmisor, Summary summary) throws IOException, NoSuchAlgorithmException {
