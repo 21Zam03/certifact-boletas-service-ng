@@ -5,5 +5,6 @@ import com.certicom.certifact_boletas_service_ng.dto.others.ResponseSunat;
 public interface SunatService {
 
     ResponseSunat sendSummary(String fileName, String contentFileBase64, String rucEmisor);
+    ResponseSunat getStatus(String nroTicket, String tipoResumen, String rucEmisor);
 
 }

@@ -39,6 +39,12 @@ public class Summary {
     private String userName;
     private List<SummaryFileDto> summaryFileDtoList;
 
+    private String codeResponse;
+    private String descripcionResponse;
+    private String userNameModify;
+    private Timestamp fechaModificacion;
+    private Integer intentosGetStatus;
+
 //    private Party emisor;
 
     @JsonIgnore

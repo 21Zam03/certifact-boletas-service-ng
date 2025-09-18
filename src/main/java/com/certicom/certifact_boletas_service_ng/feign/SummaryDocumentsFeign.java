@@ -7,13 +7,24 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @FeignClient(name = "boletas-service-sp", url = "http://localhost:8092", contextId = "summaryDocuments")
 public interface SummaryDocumentsFeign {
 
     @GetMapping("/api/summary-documents/sequential-number")
     public Integer getSequentialNumberInSummaryByFechaEmision(@RequestParam String rucEmisor, @RequestParam String fechaEmision);
 
-    @PostMapping
+    @PostMapping("/api/summary-documents")
     public Summary save(@RequestBody Summary summaryDto);
+
+    @GetMapping("/api/summary-documents/state-ruc")
+    public List<Object[]> getEstadoAndRucEmisorByNumeroTicket(@RequestParam String ticket);
+
+    @GetMapping("/state")
+    public String getEstadoByNumeroTicket(@RequestParam String ticket);
+
+    @GetMapping("/ticket")
+    Summary findByTicket(@RequestParam String ticket);
 
 }

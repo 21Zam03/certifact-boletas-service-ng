@@ -1,14 +1,19 @@
 package com.certicom.certifact_boletas_service_ng.service.impl;
 
+import com.certicom.certifact_boletas_service_ng.dto.ErrorDto;
 import com.certicom.certifact_boletas_service_ng.dto.OseDto;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponseServer;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponseSunat;
 import com.certicom.certifact_boletas_service_ng.enums.ComunicacionSunatEnum;
+import com.certicom.certifact_boletas_service_ng.enums.TypeErrorEnum;
 import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
+import com.certicom.certifact_boletas_service_ng.feign.ErrorFeign;
 import com.certicom.certifact_boletas_service_ng.service.SunatService;
 import com.certicom.certifact_boletas_service_ng.templates.template.RequestSunatTemplate;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
+import com.certicom.certifact_boletas_service_ng.util.RebuildFile;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -19,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -27,16 +33,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static com.certicom.certifact_boletas_service_ng.util.UtilXml.formatXML;
 import static com.certicom.certifact_boletas_service_ng.util.UtilXml.parseXmlFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SunatServiceImpl implements SunatService {
 
     private final CompanyFeign companyFeign;
     private final RequestSunatTemplate requestSunatTemplate;
+    private final ErrorFeign errorFeign;
 
     @Value("${sunat.endpoint}")
     private String endPointSunat;
@@ -146,6 +157,266 @@ public class SunatServiceImpl implements SunatService {
             responseSunat.setSuccess(false);
         }
         return responseSunat;
+    }
+
+    @Override
+    public ResponseSunat getStatus(String nroTicket, String tipoResumen, String rucEmisor) {
+        ResponseSunat responseSunat = new ResponseSunat();
+        String formatSoap;
+        try {
+            formatSoap = getFormatGetStatus(rucEmisor,nroTicket);
+
+            ResponseServer responseServer = null;
+            OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+            if (ose != null) {
+                if (ose.getId()==1){
+                    responseServer = send(formatSoap, obtenerEndPointSunat(rucEmisor),
+                            ConstantesParameter.TAG_GET_STATUS_CONTENT);
+                }else if (ose.getId()==2||ose.getId()==12){
+                    RestTemplate template = new RestTemplate();
+                    URI uriget = new URI(ose.getUrlFacturas()+ConstantesParameter.TAG_GET_STATUS_CONTENT);
+                    HttpHeaders requestHeaders = new HttpHeaders();
+                    HttpEntity<String> requestEntity = new HttpEntity<>(formatSoap, requestHeaders);
+                    ResponseEntity<ResponseServer> entity = template.exchange(uriget, HttpMethod.POST, requestEntity, ResponseServer.class);
+                    System.out.println("PUENTE OSE BLIZ");
+                    System.out.println(entity);
+                    if(entity.getStatusCode() == HttpStatus.OK){
+                        responseServer = entity.getBody();
+                        System.out.println("RESULTADO CONSULTA TICKET ");
+                    }
+                }else if (ose.getId()==10){
+                    responseServer = send(formatSoap, obtenerEndPointSunat(rucEmisor),
+                            ConstantesParameter.TAG_GET_STATUS_CONTENT);
+                }
+            } else {
+                responseServer = send(formatSoap, obtenerEndPointSunat(rucEmisor),
+                        ConstantesParameter.TAG_GET_STATUS_CONTENT);
+            }
+
+            buildResponseSendBillStatus(
+                    responseSunat,
+                    responseServer,
+                    ConstantesParameter.TAG_GET_STATUS_CONTENT
+            );
+            if(responseSunat.getStatusCode().equals("1078")){
+                responseServer = send(formatSoap, obtenerEndPointSunatOld(rucEmisor),
+                        ConstantesParameter.TAG_GET_STATUS_CONTENT);
+                buildResponseSendBillStatus(
+                        responseSunat,
+                        responseServer,
+                        ConstantesParameter.TAG_GET_STATUS_CONTENT
+                );
+            }
+        } catch (IOException e) {
+
+            responseSunat.setMessage("Error al comunicarse con la Sunat." + e.getMessage());
+            responseSunat.setSuccess(false);
+            responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.ERROR_INTERNO_WS_API);
+        } catch (Exception ex) {
+            responseSunat.setMessage(ex.getMessage());
+            responseSunat.setSuccess(false);
+            responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.ERROR_INTERNO_WS_API);
+        }
+        return responseSunat;
+    }
+
+    private String obtenerEndPointSunatOld(String ruc) {
+        OseDto ose = companyFeign.findOseByRucInter(ruc);
+        if (ose != null && ose.getId()!=10) {
+            return ose.getUrlFacturas();
+        } else {
+            return endPointSunatOld;
+        }
+    }
+
+    private void buildResponseSendBillStatus(ResponseSunat responseSunat, ResponseServer responseServer,
+                                             String nameTagContent) throws DOMException, IOException {
+
+        Document document;
+        NodeList nodeFaultcode;
+        NodeList nodeFaultstring;
+        NodeList nodeContentBase64;
+        Node node;
+        Node nodeStatusCode;
+        Map<String, String> datosCDR;
+        List<String> codigosResponse;
+        List<String> mensajesResponse;
+        String nameDocumentResponse;
+        String tipoDocumento;
+        String rucEmisor;
+        boolean isWarning = true;
+        StringBuilder messageResponse = null;
+
+
+        document = parseXmlFile(responseServer.getContent());
+
+        if (responseServer.isSuccess()) {
+            nodeContentBase64 = document.getElementsByTagName(nameTagContent);
+            node = nodeContentBase64.item(0);
+
+            if (node != null && StringUtils.isNotBlank(node.getTextContent())) {
+
+                if (nameTagContent.equals(ConstantesParameter.TAG_GET_STATUS_CONTENT)) {
+                    nodeStatusCode = document.getElementsByTagName(ConstantesParameter.TAG_STATUS_CODE).item(0);
+
+                    if (!nodeStatusCode.getTextContent().equals(ConstantesParameter.CODE_RESPONSE_OK)) {
+
+                        responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITH_ERROR_CONTENT);
+                        responseSunat.setStatusCode(RebuildFile.getDataResponseFromCDR(node.getTextContent()).get(ConstantesParameter.PARAM_RESPONSE_CODE));
+                        responseSunat.setMessage(RebuildFile.getDataResponseFromCDR(node.getTextContent()).get(ConstantesParameter.PARAM_DESCRIPTION));
+                        return;
+                    }
+                }
+
+                datosCDR = RebuildFile.getDataResponseFromCDR(node.getTextContent());
+                nameDocumentResponse = datosCDR.get(ConstantesParameter.PARAM_NAME_DOCUMENT);
+                tipoDocumento = datosCDR.get(ConstantesParameter.PARAM_TIPO_ARCHIVO);
+                rucEmisor = datosCDR.get(ConstantesParameter.PARAM_RUC_EMISOR);
+
+                if (((String) datosCDR.get(ConstantesParameter.PARAM_RESPONSE_CODE)).contains("|")) {
+                    codigosResponse = Arrays.asList(datosCDR.get(ConstantesParameter.PARAM_RESPONSE_CODE).split("|"));
+                    mensajesResponse = Arrays.asList(datosCDR.get(ConstantesParameter.PARAM_DESCRIPTION).split("|"));
+                    for (int i = 0; i < codigosResponse.size(); i++) {
+                        validateCodeReponseFromCDR(
+                                responseSunat,
+                                codigosResponse.get(i),
+                                tipoDocumento,
+                                mensajesResponse.get(i));
+
+                        if (responseSunat.getEstadoComunicacionSunat().equals(ComunicacionSunatEnum.SUCCESS)) {
+
+                            responseSunat.setContentBase64(node.getTextContent());
+                            isWarning = false;
+                            break;
+                        }
+                        if (responseSunat.getEstadoComunicacionSunat().equals(ComunicacionSunatEnum.SUCCESS_WITH_ERROR_CONTENT)) {
+
+                            isWarning = false;
+                            break;
+                        }
+                        if (messageResponse == null) {
+
+                            messageResponse = new StringBuilder();
+                        }
+                        messageResponse.append("[").append(codigosResponse.get(i)).append("] ").append(mensajesResponse.get(i));
+                        if ((i + 1) < codigosResponse.size()) {
+                            messageResponse.append("|");
+                        }
+                    }
+                    if (isWarning) {
+                        responseSunat.setMessage(messageResponse.toString());
+                    }
+                } else {
+                    validateCodeReponseFromCDR(
+                            responseSunat,
+                            datosCDR.get(ConstantesParameter.PARAM_RESPONSE_CODE),
+                            tipoDocumento,
+                            datosCDR.get(ConstantesParameter.PARAM_DESCRIPTION)
+                    );
+
+                    if (responseSunat.getEstadoComunicacionSunat().equals(ComunicacionSunatEnum.SUCCESS)) {
+
+                        responseSunat.setContentBase64(node.getTextContent());
+                    }
+                }
+                responseSunat.setNameDocument(nameDocumentResponse);
+                responseSunat.setRucEmisor(rucEmisor);
+                responseSunat.setStatusCode(datosCDR.get(ConstantesParameter.PARAM_RESPONSE_CODE));
+            } else {
+                responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITHOUT_CONTENT_CDR);
+                responseSunat.setMessage(ConstantesParameter.MENSAJE_NO_FOUND_CDR);
+                responseSunat.setSuccess(true);
+            }
+
+        } else {
+
+            String valueFaultcode = null;
+            String valueFaultstring = null;
+
+            nodeFaultcode = document.getElementsByTagName("faultcode");
+            nodeFaultstring = document.getElementsByTagName("faultstring");
+            node = nodeFaultcode.item(0);
+
+            if (node != null && StringUtils.isNotBlank(node.getTextContent())) {
+
+                valueFaultcode = (node.getTextContent()).replaceAll("[^0-9]", "");
+                valueFaultstring = nodeFaultstring.item(0).getTextContent();
+                if (valueFaultcode.equals("")) {
+                    responseSunat.setMessage("Error al comunicarse con la Sunat." + valueFaultstring);
+                    responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.WITHOUT_CONNECTION);
+                } else {
+                    responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITH_ERROR_CONTENT);
+                    responseSunat.setStatusCode(valueFaultcode);
+                    responseSunat.setMessage(valueFaultstring);
+                }
+            } else {
+                nodeFaultcode = document.getElementsByTagName(ConstantesParameter.TAG_STATUS_CODE);
+                node = nodeFaultcode.item(0);
+                String code = node.getTextContent();
+                if (node != null && StringUtils.isNotBlank(code)) {
+                    log.info("STATUS CODE SUNAT: {}", code);
+                    if (code.equals("98") || code.equals("0098")) {
+                        responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.PENDING);
+                        responseSunat.setStatusCode(code);
+                        responseSunat.setMessage("Sunat: Ticket se encuentra en proceso");
+                    }
+                }
+            }
+            responseSunat.setSuccess(false);
+        }
+    }
+
+    private void validateCodeReponseFromCDR(ResponseSunat responseSunat, String codigoRespuesta, String tipoDocumento, String mensajeRespuesta) {
+        ErrorDto errorRespuesta;
+
+        if (codigoRespuesta.equals(ConstantesParameter.CODIGO_ACEPTADO_FROM_CDR)) {
+            responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS);
+            responseSunat.setMessage(mensajeRespuesta);
+            responseSunat.setStatusCode(codigoRespuesta);
+            responseSunat.setSuccess(true);
+            return;
+        }
+
+        errorRespuesta = errorFeign.findFirst1ByCodeAndDocument(codigoRespuesta, tipoDocumento);
+
+        if (errorRespuesta != null) {
+            if (errorRespuesta.getType().equals(TypeErrorEnum.ERROR.getType())) {
+
+                responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITH_ERROR_CONTENT);
+                responseSunat.setSuccess(false);
+            } else {
+                responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITH_WARNING);
+                responseSunat.setSuccess(true);
+            }
+            responseSunat.setStatusCode(codigoRespuesta);
+            responseSunat.setMessage(mensajeRespuesta);
+        } else {
+
+            responseSunat.setEstadoComunicacionSunat(ComunicacionSunatEnum.SUCCESS_WITH_ERROR_CONTENT);
+            responseSunat.setStatusCode(ConstantesParameter.CODIGO_NO_FOUND_CODE_ERROR_FROM_CDR);
+            responseSunat.setMessage(ConstantesParameter.MENSAJE_NO_FOUND_CODE_FROM_CDR + ". [ResponseCode:" + codigoRespuesta + "][Tipo documento:" + tipoDocumento + "][Description:" + mensajeRespuesta + "]");
+            responseSunat.setSuccess(false);
+        }
+
+    }
+
+    private String getFormatGetStatus(String ruc, String nroTicket) {
+        OseDto ose = companyFeign.findOseByRucInter(ruc);
+        String formato = "";
+        if (ose != null) {
+            if (ose.getId()==1){
+                formato =  requestSunatTemplate.buildGetStatusOse(nroTicket);
+            }else if (ose.getId()==2){
+                formato =  requestSunatTemplate.buildGetStatusOseBliz(nroTicket);
+            }else if (ose.getId()==12){
+                formato =  requestSunatTemplate.buildGetStatusOseBliz12(nroTicket);
+            }else if (ose.getId()==10){
+                formato =  requestSunatTemplate.buildGetStatusCerti(nroTicket);
+            }
+        } else {
+            formato =  requestSunatTemplate.buildGetStatus(nroTicket);
+        }
+        return formato ;
     }
 
     private String obtenerEndPointSunat(String rucEmisor) {

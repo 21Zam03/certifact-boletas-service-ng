@@ -38,6 +38,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
     private final AmazonS3ClientService amazonS3ClientService;
     private final SummaryDocumentsFeign summaryDocumentsFeign;
     private final PaymentVoucherFeign paymentVoucherFeign;
+    private final StatusService statusService;
 
     @Override
     public ResponsePSE generarSummaryByFechaEmisionAndRuc(String rucEmisor, String fechaEmision, IdentificadorComprobante comprobante, String usuario) {
@@ -134,6 +135,29 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
         return responsePSE;
     }
 
+    @Override
+    public ResponsePSE processSummaryTicket(String ticket, String useName, String rucEmisor) {
+        ResponsePSE responsePSE = null;
+        List<Object[]> data;
+
+        String estado = null;
+        data = summaryDocumentsFeign.getEstadoAndRucEmisorByNumeroTicket(ticket);
+
+        Object[] dataReg = data.get(0);
+        rucEmisor = (String) dataReg[0];
+        estado = (String) dataReg[1];
+
+        if (estado.equals(ConstantesParameter.STATE_SUMMARY_VOIDED_DOCUMENTS_IN_PROCESO)) {
+            responsePSE = statusService.getStatus(ticket, ConstantesSunat.RESUMEN_DIARIO_BOLETAS, useName, rucEmisor);
+        } else {
+            responsePSE = new ResponsePSE();
+            responsePSE.setRespuesta(estado);
+            responsePSE.setEstado(false);
+            responsePSE.setMensaje("El ticket[" + ticket + "] ya ha sido procesado y se encuentra en estado[" + estado + "]");
+        }
+        return responsePSE;
+    }
+
     public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante) {
         Map<String, Object> result = new HashMap<>();
         List<Long> ids = new ArrayList<>();
@@ -220,7 +244,6 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                 details.add(detail);
             }
             for (PaymentVoucherDto payment : comprobantesDto) {
-
                 SummaryDetail detail = new SummaryDetail();
                 numeroLinea++;
                 payment.getEstadoItem();
@@ -258,6 +281,8 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
     }
 
     private void registrarSummaryDocuments(Summary summary, Long idRegisterFileSend, String usuario, String ticket, List<Long> ids) {
+        System.out.println("INICIO: ");
+        log.info("SUMMARY: {}, idRegisterFileSend: {}, usuario: {}, ticket: {}, ids: {}", summary, idRegisterFileSend, usuario, ticket, ids);
         Date fechaActual = Calendar.getInstance().getTime();
         Timestamp fechaEjecucion = new Timestamp(fechaActual.getTime());
 
@@ -324,6 +349,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
 
         summaryDocumentsFeign.save(summary);
         paymentVoucherFeign.updateStateToSendSunatForSummaryDocuments(ids, usuario, fechaEjecucion);
+
         System.out.println("PASO SIN PROBLEMAS");
     }
 

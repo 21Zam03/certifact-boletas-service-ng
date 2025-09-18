@@ -33,11 +33,16 @@ public interface PaymentVoucherFeign {
     public List<PaymentVoucherDto> findAllForSummaryByRucEmisorAndFechaEmision(
             @RequestParam String rucEmisor, @RequestParam String fechaEmision);
 
-    @PutMapping("state")
+    @PutMapping("/api/payment-voucher/state")
     public void updateStateToSendSunatForSummaryDocuments(
             @RequestParam("ids") List<Long> ids,
             @RequestParam("usuario") String usuario,
             @RequestParam("fechaModificacion") Timestamp fechaModificacion
     );
 
+    void updateComprobantesBySummaryDocuments(List<String> comprobantesByAceptar, String codigo, String abreviado, String usuario, Timestamp fechaModificacion);
+
+    void updateComprobantesOnResumenError(List<String> identificadoresComprobantes, String usuario, Timestamp fechaModificacion);
+
+    PaymentVoucherDto findByRucAndTipoAndSerieAndNumeroInter(String finalRucEmisor, String tipoComprobante, String serie, Integer numero);
 }
