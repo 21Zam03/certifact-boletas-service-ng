@@ -40,7 +40,7 @@ public interface PaymentVoucherFeign {
             @RequestParam("fechaModificacion") Timestamp fechaModificacion
     );
 
-    @PutMapping("/ss")
+    @PutMapping("/api/payment-voucher/payment-summary")
     void updateComprobantesBySummaryDocuments(
             @RequestParam List<String> comprobantesByAceptar,
             @RequestParam String codigo,
