@@ -213,7 +213,7 @@ public class StatusServiceImpl implements StatusService {
                         String finalRucEmisor = rucEmisor;
                         summaryDocumentEntity.getItems().forEach(detailDocsSummaryEntity -> {
                             PaymentVoucherDto paymentVoucherEntity = paymentVoucherFeign
-                                    .findByRucAndTipoAndSerieAndNumeroInter(
+                                    .findByRucAndTipoAndSerieAndNumero(
                                             finalRucEmisor, detailDocsSummaryEntity.getTipoComprobante(),
                                             detailDocsSummaryEntity.getSerie(),
                                             detailDocsSummaryEntity.getNumero());
@@ -240,9 +240,10 @@ public class StatusServiceImpl implements StatusService {
         return estado;
     }
 
-    public void actualizarDocumentoResumenByTicket(Map<String, String> params,
-                                                   String tipoDocumento, Long idRegisterFile,
-                                                   EstadoComprobanteEnum estadoComprobanteEnum) {
+    public void actualizarDocumentoResumenByTicket(
+            Map<String, String> params,
+            String tipoDocumento, Long idRegisterFile,
+            EstadoComprobanteEnum estadoComprobanteEnum) {
 
         Timestamp fechaModificacion = new Timestamp(Calendar.getInstance().getTime().getTime());
         String numeroTicket = params.get(ConstantesParameter.PARAM_NUM_TICKET);
@@ -258,7 +259,6 @@ public class StatusServiceImpl implements StatusService {
         StringBuilder msgLog = new StringBuilder();
 
         if (tipoDocumento.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
-
             Summary summary;
             summary = summaryDocumentsFeign.findByTicket(numeroTicket);
             rucEmisor = summary.getRucEmisor();

@@ -20,6 +20,7 @@ import java.util.List;
 @Builder
 public class Summary {
 
+    private Long idDocumentSummary;
     private String fechaEmision;
     private Integer nroResumenDelDia;
     private List<SummaryDetail> items;
@@ -65,7 +66,6 @@ public class Summary {
                 }
             });
         }
-        System.out.println("LISTA: "+getOrCreateSummaryFileDtoList().size());
         getOrCreateSummaryFileDtoList().add(summaryFileDto);
     }
 

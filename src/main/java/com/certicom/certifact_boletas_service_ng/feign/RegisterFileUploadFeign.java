@@ -18,6 +18,6 @@ public interface RegisterFileUploadFeign {
     public RegisterFileUploadDto saveRegisterFileUpload(@RequestBody RegisterFileUploadDto registerFileUploadModelDto);
 
     @GetMapping("/api/register-file-upload/id&uuid&tipo")
-    public RegisterFileUploadDto findByIdPaymentVoucherAndUuidTipo(@RequestParam Long id, @RequestParam String uuid, @RequestParam String tipo);
+    public RegisterFileUploadDto getDataForCdr(@RequestParam Long id);
 
 }

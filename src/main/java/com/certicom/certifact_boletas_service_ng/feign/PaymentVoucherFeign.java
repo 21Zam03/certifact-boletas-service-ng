@@ -40,7 +40,7 @@ public interface PaymentVoucherFeign {
             @RequestParam("fechaModificacion") Timestamp fechaModificacion
     );
 
-    @PutMapping("/api/payment-voucher/payment-summary")
+    @PutMapping("/api/payment-voucher/payment-summary-accept")
     void updateComprobantesBySummaryDocuments(
             @RequestParam List<String> comprobantesByAceptar,
             @RequestParam String codigo,
@@ -48,14 +48,14 @@ public interface PaymentVoucherFeign {
             @RequestParam String usuario,
             @RequestParam Timestamp fechaModificacion);
 
-    @PutMapping("/aa")
+    @PutMapping("/api/payment-voucher/payment-summary-error")
     void updateComprobantesOnResumenError(
             @RequestParam List<String> identificadoresComprobantes,
             @RequestParam String usuario,
             @RequestParam Timestamp fechaModificacion);
 
-    @GetMapping("/oo")
-    PaymentVoucherDto findByRucAndTipoAndSerieAndNumeroInter(
+    @GetMapping("/api/payment-voucher/ruc-type-serie-number")
+    PaymentVoucherDto findByRucAndTipoAndSerieAndNumero(
             @RequestParam String finalRucEmisor,
             @RequestParam String tipoComprobante,
             @RequestParam String serie,
