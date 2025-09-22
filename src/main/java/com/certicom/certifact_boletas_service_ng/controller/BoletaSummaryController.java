@@ -11,10 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping(SummaryController.API_PATH)
+@RequestMapping(BoletaSummaryController.API_PATH)
 @RestController
 @RequiredArgsConstructor
-public class SummaryController {
+public class BoletaSummaryController {
 
     public static final String API_PATH = "/api/v1/summary";
     private final SummaryValidator summaryValidator;

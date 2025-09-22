@@ -217,6 +217,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                 SummaryDetail detail = new SummaryDetail();
                 numeroLinea++;
 
+                detail.setIdPaymentVoucher(payment.getIdPaymentVoucher());
                 detail.setNumeroItem(numeroLinea);
                 detail.setSerie(payment.getSerie());
                 detail.setNumero(payment.getNumero());
@@ -247,6 +248,8 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                 SummaryDetail detail = new SummaryDetail();
                 numeroLinea++;
                 payment.getEstadoItem();
+
+                detail.setIdPaymentVoucher(payment.getIdPaymentVoucher());
                 detail.setNumeroItem(numeroLinea);
                 detail.setSerie(payment.getSerie());
                 detail.setNumero(payment.getNumero());

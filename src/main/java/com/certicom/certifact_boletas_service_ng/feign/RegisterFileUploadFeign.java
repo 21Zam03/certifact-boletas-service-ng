@@ -17,7 +17,10 @@ public interface RegisterFileUploadFeign {
     @PostMapping("/api/register-file-upload")
     public RegisterFileUploadDto saveRegisterFileUpload(@RequestBody RegisterFileUploadDto registerFileUploadModelDto);
 
-    @GetMapping("/api/register-file-upload/id&uuid&tipo")
-    public RegisterFileUploadDto getDataForCdr(@RequestParam Long id);
+    @GetMapping("/api/register-file-upload/cdr-info")
+    public RegisterFileUploadDto getDataForCdr(@RequestParam Long id, @RequestParam String uuid, @RequestParam String tipo);
+
+    @GetMapping("/api/register-file-upload/xml-info")
+    RegisterFileUploadDto getDataForXml(@RequestParam Long id, @RequestParam String uuid, @RequestParam String tipo);
 
 }

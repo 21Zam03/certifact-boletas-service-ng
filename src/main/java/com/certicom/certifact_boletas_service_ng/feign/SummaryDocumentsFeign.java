@@ -28,4 +28,7 @@ public interface SummaryDocumentsFeign {
     @GetMapping("/api/summary-documents/ticket")
     Summary findByTicket(@RequestParam String ticket);
 
+    @GetMapping("/api/summary-documents/id-document-summary")
+    Long getIdDocumentSummaryByIdPaymentVoucher(@RequestParam Long idPaymentVoucher);
+
 }

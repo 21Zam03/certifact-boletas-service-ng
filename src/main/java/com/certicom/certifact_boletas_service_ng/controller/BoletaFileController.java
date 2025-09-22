@@ -17,26 +17,31 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @RestController
-@RequestMapping(FileController.API_PATH)
+@RequestMapping(BoletaFileController.API_PATH)
 @RequiredArgsConstructor
-public class FileController {
+public class BoletaFileController {
 
     public static final String API_PATH = "/api/internal/file";
 
     private final AmazonS3ClientService amazonS3ClientService;
 
-    @GetMapping("/descargacdruuid/{id}/{uuid}/{nameDocument}")
-    public ResponseEntity<?> downloadCDR(
-            @PathVariable Long id, @PathVariable String uuid,
-            @PathVariable String nameDocument, HttpServletRequest request) throws IOException {
-        InputStream is = amazonS3ClientService.downloadFileInvoice(id, uuid, TipoArchivoEnum.CDR);
-        byte[] targetArray = ByteStreams.toByteArray(is);
-
-        ByteArrayResource resource = new ByteArrayResource(targetArray);
-
+    @GetMapping("/descargacdruuid/{id}/{uuid}")
+    public ResponseEntity<?> downloadSummaryCDR(
+            @PathVariable Long id, @PathVariable String uuid) throws IOException {
+        ByteArrayResource resource = amazonS3ClientService.downloadFileInvoice(id, uuid, TipoArchivoEnum.CDR);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .body(resource);
     }
+
+    /*DESCARGA EL XML DEL COMPROBANTE UNICO, no el xml del resumen diario*/
+    @GetMapping("/descargaxmluuid/{id}/{uuid}")
+    public ResponseEntity<?> downloadXML(@PathVariable Long id, @PathVariable String uuid) throws IOException {
+        ByteArrayResource resource = amazonS3ClientService.downloadFileInvoice(id, uuid, TipoArchivoEnum.XML);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .body(resource);
+    }
+
 
 }

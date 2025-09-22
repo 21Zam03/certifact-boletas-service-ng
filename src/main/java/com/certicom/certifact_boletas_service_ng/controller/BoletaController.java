@@ -1,7 +1,5 @@
 package com.certicom.certifact_boletas_service_ng.controller;
 
-import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
-import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
@@ -16,10 +14,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(PaymentVoucherController.API_PATH)
+@RequestMapping(BoletaController.API_PATH)
 @RequiredArgsConstructor
 @Slf4j
-public class PaymentVoucherController {
+public class BoletaController {
 
     public static final String API_PATH = "/api/v1/boletas";
     private final PaymentVoucherService paymentVoucherService;
@@ -33,7 +31,6 @@ public class PaymentVoucherController {
         paymentVoucherRequest.setUblVersion("2.1");
         paymentVoucherValidator.validate(paymentVoucherRequest, false);
         Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, idUsuario);
-        //return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
