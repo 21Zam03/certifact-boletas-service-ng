@@ -106,6 +106,7 @@ public class PaymentVoucherDto {
     private String Uuid;
     private Date fechaEmisionDate;
     private Boolean boletaAnuladaSinEmitir;
+    private String motivoAnulacion;
 
     private List<PaymentVoucherFileDto> paymentVoucherFileModelList;
 

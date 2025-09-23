@@ -262,7 +262,6 @@ public class StatusServiceImpl implements StatusService {
             Summary summary;
             summary = summaryDocumentsFeign.findByTicket(numeroTicket);
             rucEmisor = summary.getRucEmisor();
-
             summary.setEstado(estado);
             summary.setCodeResponse(codeResponse);
             summary.setDescripcionResponse(description);
