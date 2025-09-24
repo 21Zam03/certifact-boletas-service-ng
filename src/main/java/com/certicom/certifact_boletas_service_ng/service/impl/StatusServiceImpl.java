@@ -226,6 +226,7 @@ public class StatusServiceImpl implements StatusService {
                     log.error("ERROR: {} ", e.getMessage());
                 }
             }
+
         }
     }
 
@@ -305,44 +306,6 @@ public class StatusServiceImpl implements StatusService {
             identificadoresComprobantes = new ArrayList<String>(comprobantesByAceptar);
             identificadoresComprobantes.addAll(comprobantesByAnular);
 
-        } else {
-/*
-            VoidedDocumentsEntity voided;
-            identificadoresComprobantes = new ArrayList<>();
-            voided = documentsVoidedRepository.getVoidedByTicket(numeroTicket);
-            rucEmisor = voided.getRucEmisor();
-
-            voided.setEstado(estado);
-            voided.setCodigoRespuesta(codeResponse);
-            voided.setDescripcionRespuesta(description);
-            voided.setUserNameModify(usuario);
-            voided.setFechaModificacion(fechaModificacion);
-            voided.setEstadoComprobante(estadoComprobanteEnum.getCodigo());
-
-            //AGREGANDO ARCHIVO
-            if (idRegisterFile != null) {
-                voided.addFile(VoidedFileEntity.builder()
-                        .estadoArchivo(EstadoArchivoEnum.ACTIVO)
-                        .registerFileUpload(RegisterFileUploadEntity.builder().idRegisterFileSend(idRegisterFile).build())
-                        .tipoArchivo(TipoArchivoEnum.CDR)
-                        .build());
-            }
-            System.out.println("seguimiento voided");
-            documentsVoidedRepository.save(voided);
-
-            msgLog.append("{").append(ConstantesParameter.MSG_RESP_SUB_PROCESO_OK).append("}").
-                    append("{numeroTicket:").append(numeroTicket).append("}{estado:").append(estado).
-                    append("}{codeResponse:").append(codeResponse).append("}{description:").append(description).
-                    append("}{fechaModificacion:").append(fechaModificacion).append("}{estadoComprobante:").
-                    append(estadoComprobanteEnum.getCodigo()).append("}");
-
-            Logger.register(TipoLogEnum.INFO, rucEmisor, numeroTicket, OperacionLogEnum.STATUS_SUNAT_VOIDED,
-                    SubOperacionLogEnum.UPDATE_BD_VOIDED, msgLog.toString());
-
-            for (DetailDocsVoidedEntity detail : voided.getBajaDocumentos()) {
-                identificadoresComprobantes.add(rucEmisor + "-" + detail.getTipoComprobante() + "-" +
-                        detail.getSerieDocumento() + "-" + detail.getNumeroDocumento());
-            }*/
         }
 
         switch (estadoComprobanteEnum) {
@@ -440,10 +403,9 @@ public class StatusServiceImpl implements StatusService {
                                 SubOperacionLogEnum.UPDATE_BD_PAYMENT_VOUCHER, msgLog.toString());
                         * */
                     }
-                    /*
+
                     System.out.println("INGRESAMOS A ANULAR BOLETAS");
                     if (!comprobantesByAnular.isEmpty()) {
-
                         System.out.println("ANULANDO COMPROBANTES: "+comprobantesByAnular.size());
                         paymentVoucherFeign.updateComprobantesBySummaryDocuments(
                                 comprobantesByAnular,
@@ -451,7 +413,7 @@ public class StatusServiceImpl implements StatusService {
                                 EstadoSunatEnum.ANULADO.getAbreviado(),
                                 usuario, fechaModificacion);
                         // LEYTER
-
+                        /*
                         System.out.println("ANULANDO COMPROBANTES-2: "+comprobantesByAnular.size());
                         for(String comprobante : comprobantesByAnular) {
                             System.out.println("ANULANDO COMPROBANTE-2: "+comprobante);
@@ -502,8 +464,8 @@ public class StatusServiceImpl implements StatusService {
 
                         Logger.register(TipoLogEnum.INFO, rucEmisor, numeroTicket, OperacionLogEnum.STATUS_SUNAT_SUMMARY,
                                 SubOperacionLogEnum.UPDATE_BD_PAYMENT_VOUCHER, msgLog.toString());
+                        * */
                     }
-                    * */
                 }
                 break;
             case ERROR:

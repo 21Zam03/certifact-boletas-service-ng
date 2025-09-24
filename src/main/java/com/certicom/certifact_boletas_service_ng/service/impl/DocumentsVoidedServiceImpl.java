@@ -4,12 +4,16 @@ import com.certicom.certifact_boletas_service_ng.converter.VoucherAnnularConvert
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.dto.VoidedDocumentsDto;
 import com.certicom.certifact_boletas_service_ng.dto.VoucherAnnularDto;
+import com.certicom.certifact_boletas_service_ng.dto.others.IdentificadorComprobante;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
 import com.certicom.certifact_boletas_service_ng.dto.others.Voided;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
+import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
 import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
+import com.certicom.certifact_boletas_service_ng.jms.SqsProducer;
 import com.certicom.certifact_boletas_service_ng.request.VoucherAnnularRequest;
+import com.certicom.certifact_boletas_service_ng.service.DocumentsSummaryService;
 import com.certicom.certifact_boletas_service_ng.service.DocumentsVoidedService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
@@ -28,6 +32,8 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
 
     private final VoucherAnnularValidator voucherAnnularValidator;
     private final PaymentVoucherFeign paymentVoucherFeign;
+    private final DocumentsSummaryService documentsSummaryService;
+    private final SqsProducer sqsProducer;
 
     @Override
     public VoidedDocumentsDto registrarVoidedDocuments(Voided voided, Long idRegisterFile, String usuario, String ticket) {
@@ -118,7 +124,29 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
             respuesta.setMensaje(e.getMessage());
             System.out.println("ERROR: " + e.getMessage());
         }
+        generateVoidSummary(VoucherAnnularConverter.requestListToDtoList(documents), userName);
         return respuesta;
+    }
+
+    private void generateVoidSummary(List<VoucherAnnularDto> documentosToAnular, String username) {
+        ResponsePSE responsePSE = null;
+        try {
+            IdentificadorComprobante comprobante = new IdentificadorComprobante(documentosToAnular.get(0).getTipoComprobante(),documentosToAnular.get(0).getSerie(),documentosToAnular.get(0).getRucEmisor(),documentosToAnular.get(0).getNumero());
+            responsePSE = documentsSummaryService.generarSummaryByFechaEmisionAndRuc(
+                    documentosToAnular.get(0).getRucEmisor(),
+                    documentosToAnular.get(0).getFechaEmision(),
+                    comprobante,
+                    username
+            );
+            System.out.println(responsePSE.toString());
+            if (responsePSE.getEstado()) {
+                sqsProducer.produceProcessSummary(responsePSE.getTicket(), documentosToAnular.get(0).getRucEmisor());
+            }
+        } catch (ValidationException e) {
+            responsePSE = new ResponsePSE();
+            responsePSE.setEstado(false);
+            responsePSE.setMensaje(e.getMessage());
+        }
     }
 
     public void annularDocumentSendFromSummaryDocuments(VoucherAnnularDto voucherInput, String userName) {

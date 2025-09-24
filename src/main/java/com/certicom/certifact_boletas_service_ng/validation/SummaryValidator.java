@@ -26,6 +26,7 @@ public class SummaryValidator extends InputField<Object> {
     }
 
     private void validateRucActivo(String rucEmisor) {
+        System.out.println("RUC EMISOR: "+rucEmisor);
         String mensajeValidacion = null;
         String estado = companyRepository.getStateFromCompanyByRuc(rucEmisor);
         if (estado!=null){

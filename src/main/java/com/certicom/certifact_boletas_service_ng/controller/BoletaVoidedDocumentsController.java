@@ -3,6 +3,7 @@ package com.certicom.certifact_boletas_service_ng.controller;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
 import com.certicom.certifact_boletas_service_ng.request.VoucherAnnularRequest;
 import com.certicom.certifact_boletas_service_ng.service.DocumentsVoidedService;
+import com.certicom.certifact_boletas_service_ng.validation.SummaryValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,12 +24,17 @@ public class BoletaVoidedDocumentsController {
 
     public final static String API_PATH = "/api/v1/voided";
     private final DocumentsVoidedService documentsVoidedService;
+    private final SummaryValidator summaryValidator;
 
     @PostMapping
     public ResponseEntity<?> anularPaymentVoucher(@RequestBody List<VoucherAnnularRequest> documentosToAnular) {
         List<String> ticketsVoidedProcess = new ArrayList<>();
         String rucEmisor = "20204040303";
         String username = "demo@certifakt.com.pe";
+
+        summaryValidator.validateSummaryByFechaEmision(rucEmisor,
+                "2025-09-24");
+
         ResponsePSE resp = documentsVoidedService.anularDocuments(
                 documentosToAnular,
                 rucEmisor,
