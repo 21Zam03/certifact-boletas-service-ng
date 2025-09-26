@@ -159,7 +159,6 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
 
         PaymentVoucherDto boletaOrNoteBoleta = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(identificador);
         //SI QUIERO ANULAR UN COMPROBANTE ANTES DE QUE ESTE ACEPTADO EN SUNAT, SETEO UN FLAG
-        System.out.println("aqui");
         if (!boletaOrNoteBoleta.getEstadoSunat().equals(EstadoSunatEnum.ACEPTADO.getAbreviado())) {
             boletaOrNoteBoleta.setBoletaAnuladaSinEmitir(true);
         }

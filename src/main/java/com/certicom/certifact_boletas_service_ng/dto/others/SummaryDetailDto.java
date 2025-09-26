@@ -11,8 +11,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SummaryDetail {
+public class SummaryDetailDto {
 
+    private Long idDetailDocsSummary;
     private Integer numeroItem;
     private String serie;
     private Integer numero;

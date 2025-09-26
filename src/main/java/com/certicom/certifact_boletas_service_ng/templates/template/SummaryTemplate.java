@@ -1,7 +1,7 @@
 package com.certicom.certifact_boletas_service_ng.templates.template;
 
 import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
-import com.certicom.certifact_boletas_service_ng.dto.others.SummaryDetail;
+import com.certicom.certifact_boletas_service_ng.dto.others.SummaryDetailDto;
 import com.certicom.certifact_boletas_service_ng.dto.others.Tipo;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
@@ -107,7 +107,7 @@ public class SummaryTemplate {
             Element cacPartyLegalEntity = appendChild(doc, cacParty, "cac:PartyLegalEntity");
             appendChild(doc, cacPartyLegalEntity, "cbc:RegistrationName", summary.getDenominacionEmisor());
 
-            for (SummaryDetail item : summary.getItems()) {
+            for (SummaryDetailDto item : summary.getItems()) {
 
                 Element sacSummaryDocumentsLine = appendChild(doc, summaryRoot, "sac:SummaryDocumentsLine");
                 appendChild(doc, sacSummaryDocumentsLine, "cbc:LineID", item.getNumeroItem());

@@ -7,7 +7,7 @@ import com.certicom.certifact_boletas_service_ng.dto.SummaryFileDto;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponseSunat;
 import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
-import com.certicom.certifact_boletas_service_ng.dto.others.SummaryDetail;
+import com.certicom.certifact_boletas_service_ng.dto.others.SummaryDetailDto;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
@@ -262,6 +262,7 @@ public class StatusServiceImpl implements StatusService {
         if (tipoDocumento.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
             Summary summary;
             summary = summaryDocumentsFeign.findByTicket(numeroTicket);
+            System.out.println("SUMMARY: "+summary.getItems());
             rucEmisor = summary.getRucEmisor();
             summary.setEstado(estado);
             summary.setCodeResponse(codeResponse);
@@ -292,7 +293,7 @@ public class StatusServiceImpl implements StatusService {
             comprobantesByAnular = new ArrayList<>();
             comprobantesByAceptar = new ArrayList<>();
 
-            for (SummaryDetail detail : summary.getItems()) {
+            for (SummaryDetailDto detail : summary.getItems()) {
                 if (detail.getStatusItem() == ConstantesParameter.STATE_ITEM_PENDIENTE_ADICION ||
                         detail.getStatusItem() == ConstantesParameter.STATE_ITEM_PENDIENTE_MODIFICACION) {
                     comprobantesByAceptar.add(rucEmisor + "-" + detail.getTipoComprobante() + "-"
@@ -302,7 +303,7 @@ public class StatusServiceImpl implements StatusService {
                             + detail.getSerie() + "-" + detail.getNumero());
                 }
             }
-
+            System.out.println("DOCUMENTO ANULAR: "+comprobantesByAnular);
             identificadoresComprobantes = new ArrayList<String>(comprobantesByAceptar);
             identificadoresComprobantes.addAll(comprobantesByAnular);
 

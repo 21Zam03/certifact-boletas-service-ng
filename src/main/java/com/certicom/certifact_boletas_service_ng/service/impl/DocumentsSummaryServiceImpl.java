@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLOutput;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -184,7 +183,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
         if(comprobante != null && comprobante.getTipo() != null && comprobante.getSerie() != null && comprobante.getNumero() != null) {
             comprobantesDto = paymentVoucherFeign.findListSpecificForSummary(
                     rucEmisor, fechaEmision, comprobante.getTipo(), comprobante.getSerie(), comprobante.getNumero());
-            System.out.println("COMPROBANTE A ENVIAR POR RESUMEN: "+comprobantesDto);
+            System.out.println("COMPROBANTE A ENVIAR POR RESUMEN: "+comprobantesDto.get(0).getEstadoItem());
         } else {
             List<PaymentVoucherDto> listPaymentVoucherDto = paymentVoucherFeign
                     .findAllForSummaryByRucEmisorAndFechaEmision(rucEmisor, fechaEmision);
@@ -198,7 +197,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
             correlativoSummaryDto++;
             int numeroLinea = 0;
 
-            List<SummaryDetail> details = new ArrayList<SummaryDetail>();
+            List<SummaryDetailDto> details = new ArrayList<SummaryDetailDto>();
 
             summaryByDay = Summary.builder()
                     .fechaEmision(fechaEmision)
@@ -214,7 +213,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
 
             for (PaymentVoucherDto payment : comprobantesTemp) {
 
-                SummaryDetail detail = new SummaryDetail();
+                SummaryDetailDto detail = new SummaryDetailDto();
                 numeroLinea++;
 
                 detail.setIdPaymentVoucher(payment.getIdPaymentVoucher());
@@ -245,7 +244,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                 details.add(detail);
             }
             for (PaymentVoucherDto payment : comprobantesDto) {
-                SummaryDetail detail = new SummaryDetail();
+                SummaryDetailDto detail = new SummaryDetailDto();
                 numeroLinea++;
                 payment.getEstadoItem();
 
@@ -262,6 +261,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                     detail.setNumeroAfectado(payment.getNumeroAfectado());
                     detail.setTipoComprobanteAfectado(payment.getTipoComprobanteAfectado());
                 }
+                System.out.println("PAYMENT ESTADO ITEM: "+payment.getEstadoItem());
                 detail.setStatusItem(payment.getEstadoItem());
                 detail.setImporteTotalVenta(payment.getImporteTotalVenta());
                 detail.setSumatoriaOtrosCargos(payment.getSumatoriaOtrosCargos());
@@ -317,7 +317,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                     .build());
         }
 
-        for (SummaryDetail item : summary.getItems()) {
+        for (SummaryDetailDto item : summary.getItems()) {
             item.setEstado(ConstantesParameter.REGISTRO_ACTIVO);
             /*
             DetailDocsSummaryEntity detail = new DetailDocsSummaryEntity();

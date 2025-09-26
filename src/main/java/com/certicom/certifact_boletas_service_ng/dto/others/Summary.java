@@ -5,10 +5,7 @@ import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -18,12 +15,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class Summary {
 
     private Long idDocumentSummary;
     private String fechaEmision;
     private Integer nroResumenDelDia;
-    private List<SummaryDetail> items;
+    private List<SummaryDetailDto> items;
 
     private String rucEmisor;
     private String denominacionEmisor;
