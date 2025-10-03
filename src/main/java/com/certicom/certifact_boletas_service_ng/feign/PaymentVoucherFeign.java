@@ -61,5 +61,9 @@ public interface PaymentVoucherFeign {
             @RequestParam String serie,
             @RequestParam Integer numero);
 
-    PaymentVoucherDto findPaymentVoucherByRucAndTipoComprobanteAndSerieAndNumero(String rucEmisor, String tipoComprobante, String serie, Integer numero);
+    @GetMapping("/api/payment-voucher/parameters")
+    public PaymentVoucherDto findPaymentVoucherByRucAndTipoComprobanteAndSerieAndNumero(
+            @RequestParam String rucEmisor, @RequestParam String tipoComprobante,
+            @RequestParam String serie, @RequestParam Integer numero);
+
 }
