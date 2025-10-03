@@ -21,6 +21,9 @@ public interface PaymentVoucherFeign {
     @PostMapping("/api/payment-voucher")
     public PaymentVoucherDto save(@RequestBody PaymentVoucherDto paymentVoucherDto);
 
+    @PutMapping("/api/payment-voucher")
+    PaymentVoucherDto update(@RequestBody PaymentVoucherDto paymentVoucherDto);
+
     @GetMapping("/api/payment-voucher/specific-summary")
     public List<PaymentVoucherDto> findListSpecificForSummary(
             @RequestParam String rucEmisor,
@@ -60,10 +63,5 @@ public interface PaymentVoucherFeign {
             @RequestParam String tipoComprobante,
             @RequestParam String serie,
             @RequestParam Integer numero);
-
-    @GetMapping("/api/payment-voucher/parameters")
-    public PaymentVoucherDto findPaymentVoucherByRucAndTipoComprobanteAndSerieAndNumero(
-            @RequestParam String rucEmisor, @RequestParam String tipoComprobante,
-            @RequestParam String serie, @RequestParam Integer numero);
 
 }
