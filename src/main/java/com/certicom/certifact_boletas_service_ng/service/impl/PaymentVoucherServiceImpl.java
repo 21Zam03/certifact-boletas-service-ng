@@ -185,6 +185,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
 
 * */
+
     private Map<String, Object> generateNewDocument(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
         Map<String, Object> resultado = new HashMap<>();
         ResponsePSE response;
@@ -211,11 +212,61 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             }
 
             Map<String, String> plantillaGenerado = generarPlantillaXml(companyDto, paymentVoucherDto);
-            paymentVoucher.setCodigoHash(plantillaGenerado.get(ConstantesParameter.CODIGO_HASH));
+            paymentVoucherDto.setCodigoHash(plantillaGenerado.get(ConstantesParameter.CODIGO_HASH));
 
             RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
 
             comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getIdRegisterFileSend(), userLogged.getNombreUsuario());
+            System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
+            sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
+
+            resultado.put(ConstantesParameter.PARAM_BEAN_SEND_BOLETA, sendBoletaDto);
+            status = true;
+        } catch (TemplateException | SignedException e) {
+            messageResponse = "Error al generar plantilla del documento[" + paymentVoucher.getIdentificadorDocumento() + "] " + e.getMessage();
+        } catch (Exception e) {
+            messageResponse = e.getMessage();
+        }
+        if(!status) {
+            throw new ServiceException(messageResponse);
+        }
+        response = createResponsePse(messageResponse, status, comprobanteCreado);
+
+        resultado.put("idPaymentVoucher", comprobanteCreado.getIdPaymentVoucher());
+        resultado.put(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE, response);
+
+        validateAutomaticDelivery((SendBoletaDto) resultado.get(ConstantesParameter.PARAM_BEAN_SEND_BOLETA));
+        return resultado;
+    }
+
+    private Map<String, Object> updateExistingDocument(PaymentVoucherRequest paymentVoucher, Long idUsuario) {
+        Map<String, Object> resultado = new HashMap<>();
+        ResponsePSE response;
+        boolean status = false;
+        PaymentVoucherDto comprobanteCreado = null;
+        SendBoletaDto sendBoletaDto = null;
+        String messageResponse = ConstantesParameter.MSG_REGISTRO_DOCUMENTO_OK;
+
+        try {
+            PaymentVoucherDto paymentVoucherDto = PaymentVoucherConverter.requestToDto(paymentVoucher);
+            paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
+            UserDto userLogged = userFeign.findUserById(idUsuario);
+            CompanyDto companyDto = completarDatosEmisor(paymentVoucherDto);
+            setCodigoTipoOperacionCatalog(paymentVoucherDto);
+            setOficinaId(paymentVoucherDto, companyDto);
+            setLeyenda(paymentVoucherDto);
+
+            PaymentVoucherDto paymentVoucherDtoOld = paymentVoucherFeign.findPaymentVoucherByRucAndTipoComprobanteAndSerieAndNumero(
+                    paymentVoucherDto.getRucEmisor(), paymentVoucherDto.getTipoComprobante(), paymentVoucherDto.getSerie(), paymentVoucherDto.getNumero());
+            if (paymentVoucherDtoOld == null)
+                throw new ServiceException("Este comprobante que desea editar, no existe en la base de datos del PSE");
+
+            Map<String, String> plantillaGenerado = generarPlantillaXml(companyDto, paymentVoucherDto);
+            paymentVoucherDto.setCodigoHash(plantillaGenerado.get(ConstantesParameter.CODIGO_HASH));
+
+            RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
+
+            comprobanteCreado = updateVoucher(paymentVoucherDto, paymentVoucherDtoOld, archivoSubido.getIdRegisterFileSend(), userLogged.getNombreUsuario());
             System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
             sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
 
@@ -316,7 +367,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         paymentVoucherDto.setFechaRegistro(new Timestamp(Calendar.getInstance().getTime().getTime()));
         paymentVoucherDto.setUserName(nombreUsuario);
         paymentVoucherDto.setFechaModificacion(null);
-        paymentVoucherDto.setUserNameModificacion(null);
+        paymentVoucherDto.setUserNameModificacion(nombreUsuario);
 
         if (idRegisterFile != null) {
             paymentVoucherDto.addPaymentVoucherFile(PaymentVoucherFileDto.builder()
@@ -340,8 +391,13 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
         paymentVoucherDto.setUuid(UUIDGen.generate());
         paymentVoucherDto.setFechaEmisionDate(new Date());
+        paymentVoucherDto.setCuentaFinancieraBeneficiario("");
 
         return paymentVoucherFeign.save(paymentVoucherDto);
+    }
+
+    private PaymentVoucherDto updateVoucher(PaymentVoucherDto paymentVoucherDto, PaymentVoucherDto paymentVoucherDtoOld, Long idRegisterFile, String nombreUsuario) {
+        return null;
     }
 
     private RegisterFileUploadDto subirXmlComprobante(CompanyDto companyDto, Map<String, String> plantillaGenerado) {
