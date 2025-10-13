@@ -20,7 +20,15 @@ public class AnticipoPaymentConverter {
         return anticipoPaymentDtoList;
     }
     public static AnticipoPaymentDto requestToDto(AnticipoPaymentRequest anticipoPaymentRequest) {
-        return AnticipoPaymentDto.builder().build();
+        return AnticipoPaymentDto.builder()
+                .idAnticipoPayment(anticipoPaymentRequest.getIdAnticipoPayment())
+                .idPaymentVoucher(anticipoPaymentRequest.getIdPaymentVoucher())
+                .identificadorPago(anticipoPaymentRequest.getIdentificadorPago())
+                .serieAnticipo(anticipoPaymentRequest.getSerieAnticipo())
+                .numeroAnticipo(anticipoPaymentRequest.getNumeroAnticipo())
+                .tipoDocAnticipo(anticipoPaymentRequest.getTipoDocAnticipo())
+                .montoAnticipo(anticipoPaymentRequest.getMontoAnticipo())
+                .build();
     }
 
 }

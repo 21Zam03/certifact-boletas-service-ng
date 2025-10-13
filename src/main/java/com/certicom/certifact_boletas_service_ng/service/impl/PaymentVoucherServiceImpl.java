@@ -201,7 +201,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
         try {
             PaymentVoucherDto paymentVoucherDto = PaymentVoucherConverter.requestToDto(paymentVoucher);
-            paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
+
             UserDto userLogged = userFeign.findUserById(idUsuario);
             CompanyDto companyDto = completarDatosEmisor(paymentVoucherDto);
             setCodigoTipoOperacionCatalog(paymentVoucherDto);
@@ -222,7 +222,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
 
             comprobanteCreado = saveVoucher(paymentVoucherDto, archivoSubido.getIdRegisterFileSend(), userLogged.getNombreUsuario());
-            System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
+
             sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
 
             resultado.put(ConstantesParameter.PARAM_BEAN_SEND_BOLETA, sendBoletaDto);
@@ -254,7 +254,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
         try {
             PaymentVoucherDto paymentVoucherDto = PaymentVoucherConverter.requestToDto(paymentVoucher);
-            paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
+            //paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherDto);
             UserDto userLogged = userFeign.findUserById(idUsuario);
             CompanyDto companyDto = completarDatosEmisor(paymentVoucherDto);
             setCodigoTipoOperacionCatalog(paymentVoucherDto);

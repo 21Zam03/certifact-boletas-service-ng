@@ -1,5 +1,7 @@
 package com.certicom.certifact_boletas_service_ng.controller;
 
+import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
+import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
@@ -22,13 +24,14 @@ public class BoletaController {
     public static final String API_PATH = "/api/v1/boletas";
     private final PaymentVoucherService paymentVoucherService;
     private final PaymentVoucherValidator paymentVoucherValidator;
+    private final PaymentVoucherFormatter paymentVoucherFormatter;
 
     @PostMapping
     public ResponseEntity<?> savePaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
+        //Id usuario por defecto va ir en duro hasta saber como identificar al usuario que haral a peticion desde el gateway
         Long idUsuario = 2L;
-        watchLog(paymentVoucherRequest);
 
-        paymentVoucherRequest.setUblVersion("2.1");
+        paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherRequest);
         paymentVoucherValidator.validate(paymentVoucherRequest, false);
         Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, idUsuario);
         return new ResponseEntity<>(result, HttpStatus.OK);

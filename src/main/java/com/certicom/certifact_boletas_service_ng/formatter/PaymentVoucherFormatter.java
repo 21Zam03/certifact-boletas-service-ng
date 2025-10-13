@@ -3,6 +3,9 @@ package com.certicom.certifact_boletas_service_ng.formatter;
 import com.certicom.certifact_boletas_service_ng.dto.AnticipoPaymentDto;
 import com.certicom.certifact_boletas_service_ng.dto.DetailsPaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
+import com.certicom.certifact_boletas_service_ng.request.AnticipoPaymentRequest;
+import com.certicom.certifact_boletas_service_ng.request.DetailsPaymentVoucherRequest;
+import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -17,7 +20,7 @@ public class PaymentVoucherFormatter {
 
     private final PaymentVoucherDetailFormatter paymentVoucherDetailFormatter;
 
-    public void formatPaymentVoucher(PaymentVoucherDto paymentVoucherDto) {
+    public void formatPaymentVoucher(PaymentVoucherRequest paymentVoucherDto) {
         calculateTotalValorVenta(paymentVoucherDto);
         formatTotalValorVenta(paymentVoucherDto);
         formatItems(paymentVoucherDto);
@@ -25,13 +28,13 @@ public class PaymentVoucherFormatter {
         formatData(paymentVoucherDto);
     }
 
-    private void calculateTotalValorVenta(PaymentVoucherDto paymentVoucherDto) {
+    private void calculateTotalValorVenta(PaymentVoucherRequest paymentVoucherDto) {
         if (isNullOrZero(paymentVoucherDto.getTotalValorVentaGravada())
                 && isNullOrZero(paymentVoucherDto.getTotalValorVentaExportacion())
                 && isNullOrZero(paymentVoucherDto.getTotalValorVentaExonerada())
                 && isNullOrZero(paymentVoucherDto.getTotalImpOperGratuita())
                 && isNullOrZero(paymentVoucherDto.getTotalValorVentaInafecta())) {
-            for (DetailsPaymentVoucherDto line: paymentVoucherDto.getItems() ) {
+            for (DetailsPaymentVoucherRequest line: paymentVoucherDto.getItems() ) {
                 switch (line.getCodigoTipoAfectacionIGV()){
                     case "20":
                         if(paymentVoucherDto.getTotalValorVentaExonerada()==null) {
@@ -44,7 +47,7 @@ public class PaymentVoucherFormatter {
         }
     }
 
-    private void formatTotalValorVenta(PaymentVoucherDto paymentVoucherModel) {
+    private void formatTotalValorVenta(PaymentVoucherRequest paymentVoucherModel) {
         if (isNotNullAndZero(paymentVoucherModel.getTotalValorVentaGravada())) {
             paymentVoucherModel.setTotalValorVentaGravada(null);
         }
@@ -71,13 +74,13 @@ public class PaymentVoucherFormatter {
         }
     }
 
-    private void formatItems(PaymentVoucherDto paymentVoucherModel) {
-        for (DetailsPaymentVoucherDto line: paymentVoucherModel.getItems() ) {
+    private void formatItems(PaymentVoucherRequest paymentVoucherModel) {
+        for (DetailsPaymentVoucherRequest line: paymentVoucherModel.getItems() ) {
             paymentVoucherDetailFormatter.format(line);
         }
     }
 
-    private void formatAnticipos(List<AnticipoPaymentDto> anticipos) {
+    private void formatAnticipos(List<AnticipoPaymentRequest> anticipos) {
         int correlativo = 1;
         if (anticipos != null && !anticipos.isEmpty()) {
             for (int i=0; i<anticipos.size(); i++) {
@@ -91,7 +94,7 @@ public class PaymentVoucherFormatter {
         }
     }
 
-    private void formatData(PaymentVoucherDto paymentVoucherModel) {
+    private void formatData(PaymentVoucherRequest paymentVoucherModel) {
         paymentVoucherModel.setRucEmisor(StringUtils.trimToNull(paymentVoucherModel.getRucEmisor()));
         paymentVoucherModel.setSerie(paymentVoucherModel.getSerie().toUpperCase());
         paymentVoucherModel.setHoraEmision(StringUtils.trimToNull(paymentVoucherModel.getHoraEmision()));
@@ -115,6 +118,9 @@ public class PaymentVoucherFormatter {
         }
         if (StringUtils.isBlank(paymentVoucherModel.getTipoDocumentoReceptor())) {
             paymentVoucherModel.setTipoDocumentoReceptor("-");
+        }
+        if(paymentVoucherModel.getUblVersion() == null) {
+            paymentVoucherModel.setUblVersion("2.1");
         }
     }
 
