@@ -8,8 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 @Component
-public class FeignCorrelationIdInterceptor implements RequestInterceptor {
+public class FeignCorrelationIdInterceptor {
 
+    /*
     private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
     private static final String SERVICE_NAME_HEADER = "X-Service-Name";
@@ -29,5 +30,7 @@ public class FeignCorrelationIdInterceptor implements RequestInterceptor {
         requestTemplate.header(SERVICE_NAME_HEADER, SERVICE_NAME);
 
     }
+
+    * */
 
 }
