@@ -15,15 +15,18 @@ public class CompanyRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-company-endpoint}")
+    private String apiCompanyEndpoint;
 
     public CompanyRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public String getStateFromCompanyByRuc(String rucEmisor) {
-        String url = baseUrl + "/api/company/state?rucEmisor=" + rucEmisor;
+        String url = getUrlEndpoint()+"/state?rucEmisor=" + rucEmisor;
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             return response.getBody();
@@ -37,7 +40,7 @@ public class CompanyRestService {
     }
 
     public CompanyDto findCompanyByRuc(String ruc) {
-        String url = String.format("%s/api/company/%s", baseUrl, ruc);
+        String url = getUrlEndpoint()+"/"+ruc;
         try {
             ResponseEntity<CompanyDto> response = restTemplate.getForEntity(url, CompanyDto.class);
             return response.getBody();
@@ -51,7 +54,7 @@ public class CompanyRestService {
     }
 
     public OseDto findOseByRucInter(String ruc) {
-        String url = baseUrl + "/api/company/ose?ruc=" + ruc;
+        String url = getUrlEndpoint()+"/ose?ruc="+ruc;
         try {
             ResponseEntity<OseDto> response = restTemplate.getForEntity(url, OseDto.class);
             return response.getBody();
@@ -64,4 +67,7 @@ public class CompanyRestService {
         }
     }
 
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiCompanyEndpoint;
+    }
 }

@@ -12,29 +12,31 @@ public class AnticipoRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    private String apiAnticipoEndpoint;
 
     public AnticipoRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public int deleteAnticipoById(Long anticipoId) {
-        String url = String.format("%s/%d", baseUrl, anticipoId);
+        String url = getUrlEndpoint()+"/"+anticipoId;
         try {
             restTemplate.delete(url);
-            // Si llega aquí, la eliminación fue exitosa (HTTP 200 o 204)
             return 1;
         } catch (HttpClientErrorException.NotFound e) {
-            // Si el anticipo no existe
             return 0;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            // Error 4xx o 5xx
             throw new RuntimeException("Error al eliminar anticipo: " + e.getMessage(), e);
         } catch (ResourceAccessException e) {
-            // Error de conexión o timeout
             throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
         }
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiAnticipoEndpoint;
     }
 
 }

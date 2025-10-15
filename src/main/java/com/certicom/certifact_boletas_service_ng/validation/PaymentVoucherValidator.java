@@ -2,15 +2,15 @@ package com.certicom.certifact_boletas_service_ng.validation;
 
 import com.certicom.certifact_boletas_service_ng.deserializer.InputField;
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
 import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
 import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
 import com.certicom.certifact_boletas_service_ng.request.AnticipoPaymentRequest;
 import com.certicom.certifact_boletas_service_ng.request.DetailsPaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
-import com.certicom.certifact_boletas_service_ng.util.UtilFormat;
+import com.certicom.certifact_boletas_service_ng.util.*;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -255,24 +255,23 @@ public class PaymentVoucherValidator extends InputField<Object> {
         try {
             int proximo = paymentVoucherRestService.
                     obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(tipoComprobante, serie, rucEmisor);
-            System.out.println("PROXIMO: "+proximo);
-            System.out.println("NUMERO: "+numero);
             if (proximo > 1){
                 int diferencia = numero - proximo;
                 if (diferencia > 120){
+                    LogHelper.warnLog(LogTitle.WARN_VALIDATION.getType(),
+                            LogMessages.currentMethod(), "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones.");
                     throw new ValidationException(
                             "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones."
                     );
                 }
             }
         } catch (FeignException fe) {
-            throw new ValidationException(
-                    "No se pudo validar la numeracion [" +numero+ "]. Error al comunicarse con el servicio de validación: " + fe.getMessage()
-            );
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error al comunicarse con el servicio externo ", fe);
+            throw new ServiceException(LogMessages.ERROR_HTTP, fe);
         } catch (Exception e) {
-            throw new ValidationException(
-                    "Error inesperado al validar la numeracion [" + numero + "]: " + e.getMessage()
-            );
+            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado", e);
+            throw new ServiceException(LogMessages.ERROR_UNEXPECTED, e);
         }
     }
 

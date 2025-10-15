@@ -1,5 +1,8 @@
 package com.certicom.certifact_boletas_service_ng.filter;
 
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,8 @@ public class DataFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        long startTime = System.currentTimeMillis();
+
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String ruc = request.getHeader(RUC_CLIENT);
         String id = request.getHeader(X_ID_USER);
@@ -30,7 +35,9 @@ public class DataFilter implements Filter {
         }
 
         try {
+            LogHelper.infoLog(LogTitle.INFO.getType(), LogMessages.currentMethod(), "Incoming request ["+request.getMethod()+" "+request.getRequestURI()+"]");
             filterChain.doFilter(servletRequest, servletResponse);
+            LogHelper.infoLog(LogTitle.INFO.getType(), LogMessages.currentMethod(), "Completed request: duration="+(System.currentTimeMillis() - startTime)+"ms");
         } finally {
             MDC.clear();
         }

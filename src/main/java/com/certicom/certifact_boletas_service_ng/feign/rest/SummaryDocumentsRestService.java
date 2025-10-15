@@ -16,15 +16,18 @@ public class SummaryDocumentsRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-summarydocuments-endpoint}")
+    private String apiSummaryDocumentsEndpoint;
 
     public SummaryDocumentsRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public Integer getSequentialNumberInSummaryByFechaEmision(String rucEmisor, String fechaEmision) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/summary-documents/sequential-number")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/sequential-number")
                 .queryParam("rucEmisor", rucEmisor)
                 .queryParam("fechaEmision", fechaEmision)
                 .toUriString();
@@ -34,7 +37,7 @@ public class SummaryDocumentsRestService {
     }
 
     public Summary save(Summary summaryDto) {
-        String url = baseUrl + "/api/summary-documents";
+        String url = getUrlEndpoint();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Summary> request = new HttpEntity<>(summaryDto, headers);
@@ -44,7 +47,7 @@ public class SummaryDocumentsRestService {
     }
 
     public List<RucEstadoOther> getEstadoAndRucEmisorByNumeroTicket(String ticket) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/summary-documents/state-ruc")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/state-ruc")
                 .queryParam("ticket", ticket)
                 .toUriString();
         ResponseEntity<List<RucEstadoOther>> response = restTemplate.exchange(
@@ -53,7 +56,7 @@ public class SummaryDocumentsRestService {
     }
 
     public String getEstadoByNumeroTicket(String ticket) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/summary-documents/state")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/state")
                 .queryParam("ticket", ticket)
                 .toUriString();
         ResponseEntity<String> response = restTemplate.exchange(
@@ -62,7 +65,7 @@ public class SummaryDocumentsRestService {
     }
 
     public Summary findByTicket(String ticket) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/summary-documents/ticket")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/ticket")
                 .queryParam("ticket", ticket)
                 .toUriString();
         ResponseEntity<Summary> response = restTemplate.exchange(
@@ -71,12 +74,16 @@ public class SummaryDocumentsRestService {
     }
 
     public Long getIdDocumentSummaryByIdPaymentVoucher(Long idPaymentVoucher) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/summary-documents/id-document-summary")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/id-document-summary")
                 .queryParam("idPaymentVoucher", idPaymentVoucher)
                 .toUriString();
         ResponseEntity<Long> response = restTemplate.exchange(
                 url, HttpMethod.GET, null, Long.class);
         return response.getBody();
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiSummaryDocumentsEndpoint;
     }
 
 }

@@ -11,8 +11,11 @@ public class ErrorRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-error-catalog}")
+    private String apiErrorCatalog;
 
     public ErrorRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -20,12 +23,16 @@ public class ErrorRestService {
 
     public ErrorDto findFirst1ByCodeAndDocument(String codigoRespuesta, String tipoDocumento) {
         String url = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + "/error")
+                .fromHttpUrl(getUrlEndpoint())
                 .queryParam("codigoRespuesta", codigoRespuesta)
                 .queryParam("tipoDocumento", tipoDocumento)
                 .toUriString();
 
         return restTemplate.getForObject(url, ErrorDto.class);
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiErrorCatalog;
     }
 
 }

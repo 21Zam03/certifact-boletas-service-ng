@@ -13,8 +13,11 @@ public class UserRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-user-endpoint}")
+    private String apiUserEndpoint;
 
     public UserRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -22,7 +25,7 @@ public class UserRestService {
 
     public UserDto findUserById(Long idUser) {
         String url = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + "/api/user/idUser")
+                .fromHttpUrl(getUrlEndpoint()+ "/idUser")
                 .queryParam("idUser", idUser)
                 .toUriString();
         ResponseEntity<UserDto> response = restTemplate.exchange(
@@ -32,12 +35,16 @@ public class UserRestService {
 
     public UserDto findUserByUsername(String username) {
         String url = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + "/api/user/username")
+                .fromHttpUrl(getUrlEndpoint() + "/username")
                 .queryParam("username", username)
                 .toUriString();
         ResponseEntity<UserDto> response = restTemplate.exchange(
                 url, HttpMethod.GET, null, UserDto.class);
         return response.getBody();
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiUserEndpoint;
     }
 
 }

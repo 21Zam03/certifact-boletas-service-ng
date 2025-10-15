@@ -16,15 +16,18 @@ public class PaymentVoucherRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-paymentvoucher-endpoint}")
+    private String apiPaymentVoucherEndpoint;
 
     public PaymentVoucherRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public Integer obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(String tipoComprobante, String serie, String ruc) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/number")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint()+"/number")
                 .queryParam("tipoComprobante", tipoComprobante)
                 .queryParam("serie", serie)
                 .queryParam("ruc", ruc)
@@ -33,19 +36,19 @@ public class PaymentVoucherRestService {
     }
 
     public PaymentVoucherDto getPaymentVoucherByIdentificadorDocumento(String identificadorDocumento) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/id-document")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint()+"/id-document")
                 .queryParam("identificadorDocumento", identificadorDocumento)
                 .toUriString();
         return restTemplate.getForObject(url, PaymentVoucherDto.class);
     }
 
     public PaymentVoucherDto save(PaymentVoucherDto paymentVoucherDto) {
-        String url = baseUrl + "/api/payment-voucher";
+        String url = getUrlEndpoint();
         return restTemplate.postForObject(url, paymentVoucherDto, PaymentVoucherDto.class);
     }
 
     public PaymentVoucherDto update(PaymentVoucherDto paymentVoucherDto) {
-        String url = baseUrl + "/api/payment-voucher";
+        String url = getUrlEndpoint();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<PaymentVoucherDto> requestEntity = new HttpEntity<>(paymentVoucherDto, headers);
@@ -64,7 +67,7 @@ public class PaymentVoucherRestService {
             String tipo,
             String serie,
             Integer numero) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/specific-summary")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/specific-summary")
                 .queryParam("rucEmisor", rucEmisor)
                 .queryParam("fechaEmision", fechaEmision)
                 .queryParam("tipo", tipo)
@@ -81,7 +84,7 @@ public class PaymentVoucherRestService {
     }
 
     public List<PaymentVoucherDto> findAllForSummaryByRucEmisorAndFechaEmision(String rucEmisor, String fechaEmision) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/summary-ruc-date")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/summary-ruc-date")
                 .queryParam("rucEmisor", rucEmisor)
                 .queryParam("fechaEmision", fechaEmision)
                 .toUriString();
@@ -97,7 +100,7 @@ public class PaymentVoucherRestService {
 
     public void updateStateToSendSunatForSummaryDocuments(List<Long> ids, String usuario, Timestamp fechaModificacion) {
         String fechaIso = fechaModificacion.toInstant().toString();
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/state")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/state")
                 .queryParam("ids", ids)
                 .queryParam("usuario", usuario)
                 .queryParam("fechaModificacion", fechaIso)
@@ -111,7 +114,7 @@ public class PaymentVoucherRestService {
             String abreviado,
             String usuario,
             Timestamp fechaModificacion) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/payment-summary-accept")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/payment-summary-accept")
                 .queryParam("comprobantesByAceptar", comprobantesByAceptar)
                 .queryParam("codigo", codigo)
                 .queryParam("abreviado", abreviado)
@@ -125,7 +128,7 @@ public class PaymentVoucherRestService {
             List<String> identificadoresComprobantes,
             String usuario,
             Timestamp fechaModificacion) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/payment-summary-error")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/payment-summary-error")
                 .queryParam("identificadoresComprobantes", identificadoresComprobantes)
                 .queryParam("usuario", usuario)
                 .queryParam("fechaModificacion", fechaModificacion)
@@ -138,7 +141,7 @@ public class PaymentVoucherRestService {
             String tipoComprobante,
             String serie,
             Integer numero) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/payment-voucher/ruc-type-serie-number")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/ruc-type-serie-number")
                 .queryParam("finalRucEmisor", finalRucEmisor)
                 .queryParam("tipoComprobante", tipoComprobante)
                 .queryParam("serie", serie)
@@ -146,4 +149,9 @@ public class PaymentVoucherRestService {
                 .toUriString();
         return restTemplate.getForObject(url, PaymentVoucherDto.class);
     }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiPaymentVoucherEndpoint;
+    }
+
 }

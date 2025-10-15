@@ -12,27 +12,32 @@ public class CuotaPaymentVoucherRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-cuota-endpoint}")
+    private String apiCuotaEndpoint;
 
     public CuotaPaymentVoucherRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public int deletePaymentCuotaById(Long paymentCuotaId) {
-        String url = String.format("%s/api/payment_cuotas/%d", baseUrl, paymentCuotaId);
+        String url = getUrlEndpoint()+"/"+paymentCuotaId;
         try {
             restTemplate.delete(url);
-            // Si llega aquí, la eliminación fue exitosa (HTTP 200 o 204)
             return 1;
         } catch (HttpClientErrorException.NotFound e) {
-            // Si no se encuentra el recurso
             return 0;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new RuntimeException("Error al eliminar la cuota de pago: " + e.getMessage(), e);
         } catch (ResourceAccessException e) {
             throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
         }
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiCuotaEndpoint;
     }
 
 }

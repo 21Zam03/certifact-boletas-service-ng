@@ -9,17 +9,24 @@ public class GuiaPaymentRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-guiapayment-endpoint}")
+    private String apiGuiaPaymentEndpoint;
 
     public GuiaPaymentRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public int deleteGuiaPaymentById(Long guiaPaymentId) {
-        String url = baseUrl + "/api/guia-payment-voucher/" + guiaPaymentId;
+        String url = getUrlEndpoint() + "/" + guiaPaymentId;
         restTemplate.delete(url);
-        return 1; // Simula el retorno del Feign (si se elimina correctamente)
+        return 1;
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiGuiaPaymentEndpoint;
     }
 
 }

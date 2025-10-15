@@ -11,8 +11,11 @@ public class RegisterFileUploadRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("${external.services.boleta-service-sp.endpoints.api-registerfileupload-endpoint}")
+    private String apiRegisterFileUploadEndpoint;
 
     public RegisterFileUploadRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -22,7 +25,7 @@ public class RegisterFileUploadRestService {
             Long idPayment,
             String tipoArchivo,
             String estadoArchivo) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/register-file-upload")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint())
                 .queryParam("idPayment", idPayment)
                 .queryParam("tipoArchivo", tipoArchivo)
                 .queryParam("estadoArchivo", estadoArchivo)
@@ -31,12 +34,12 @@ public class RegisterFileUploadRestService {
     }
 
     public RegisterFileUploadDto saveRegisterFileUpload(RegisterFileUploadDto registerFileUploadModelDto) {
-        String url = baseUrl + "/api/register-file-upload";
+        String url = getUrlEndpoint();
         return restTemplate.postForObject(url, registerFileUploadModelDto, RegisterFileUploadDto.class);
     }
 
     public RegisterFileUploadDto getDataForCdr(Long id, String uuid, String tipo) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/register-file-upload/cdr-info")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/cdr-info")
                 .queryParam("id", id)
                 .queryParam("uuid", uuid)
                 .queryParam("tipo", tipo)
@@ -45,12 +48,16 @@ public class RegisterFileUploadRestService {
     }
 
     public RegisterFileUploadDto getDataForXml(Long id, String uuid, String tipo) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/register-file-upload/xml-info")
+        String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint() + "/xml-info")
                 .queryParam("id", id)
                 .queryParam("uuid", uuid)
                 .queryParam("tipo", tipo)
                 .toUriString();
         return restTemplate.getForObject(url, RegisterFileUploadDto.class);
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiRegisterFileUploadEndpoint;
     }
 
 }

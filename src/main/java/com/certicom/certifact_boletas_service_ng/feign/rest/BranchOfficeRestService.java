@@ -15,8 +15,11 @@ public class BranchOfficeRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
+
+    @Value("external.services.boleta-service-sp.endpoints.api-office-endpoint")
+    private String apiOfficeEndpoint;
 
     public BranchOfficeRestService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -25,7 +28,7 @@ public class BranchOfficeRestService {
     public BranchOfficesDto obtenerOficinaPorEmpresaIdYSerieYTipoComprobante(
             Integer empresaId, String serie, String tipoComprobante) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromHttpUrl(baseUrl)
+                .fromHttpUrl(getUrlEndpoint())
                 .queryParam("empresaId", empresaId)
                 .queryParam("serie", serie)
                 .queryParam("tipoComprobante", tipoComprobante);
@@ -40,6 +43,10 @@ public class BranchOfficeRestService {
         } catch (ResourceAccessException e) {
             throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
         }
+    }
+
+    private String getUrlEndpoint() {
+        return this.baseUrl+this.apiOfficeEndpoint;
     }
 
 }

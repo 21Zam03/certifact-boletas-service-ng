@@ -11,7 +11,7 @@ public class ParameterRestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.api.url}")
+    @Value("${external.services.boleta-service-sp.base-url}")
     private String baseUrl;
 
     public ParameterRestService(RestTemplate restTemplate) {
