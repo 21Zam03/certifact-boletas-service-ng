@@ -2,7 +2,7 @@ package com.certicom.certifact_boletas_service_ng.validation;
 
 import com.certicom.certifact_boletas_service_ng.deserializer.InputField;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.UtilFormat;
 import com.fasterxml.jackson.core.JacksonException;
@@ -18,7 +18,9 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class SummaryValidator extends InputField<Object> {
 
-    private final CompanyFeign companyRepository;
+    //private final CompanyFeign companyRepository;
+
+    private final CompanyRestService companyRestService;
 
     public void validateSummaryByFechaEmision(String rucEmisor, String fechaEmision)  {
         validateRucActivo(rucEmisor);
@@ -28,7 +30,7 @@ public class SummaryValidator extends InputField<Object> {
     private void validateRucActivo(String rucEmisor) {
         System.out.println("RUC EMISOR: "+rucEmisor);
         String mensajeValidacion = null;
-        String estado = companyRepository.getStateFromCompanyByRuc(rucEmisor);
+        String estado = companyRestService.getStateFromCompanyByRuc(rucEmisor);
         if (estado!=null){
             if (!estado.equals(ConstantesParameter.REGISTRO_ACTIVO)) {
                 throw new ValidationException("El ruc emisor [" + rucEmisor + "] No se encuentra habilitado para "

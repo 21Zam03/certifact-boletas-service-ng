@@ -6,8 +6,8 @@ import com.certicom.certifact_boletas_service_ng.dto.others.ResponseServer;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponseSunat;
 import com.certicom.certifact_boletas_service_ng.enums.ComunicacionSunatEnum;
 import com.certicom.certifact_boletas_service_ng.enums.TypeErrorEnum;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.ErrorFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.ErrorRestService;
 import com.certicom.certifact_boletas_service_ng.service.SunatService;
 import com.certicom.certifact_boletas_service_ng.templates.template.RequestSunatTemplate;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
@@ -45,9 +45,13 @@ import static com.certicom.certifact_boletas_service_ng.util.UtilXml.parseXmlFil
 @Slf4j
 public class SunatServiceImpl implements SunatService {
 
-    private final CompanyFeign companyFeign;
     private final RequestSunatTemplate requestSunatTemplate;
-    private final ErrorFeign errorFeign;
+
+    //private final CompanyFeign companyFeign;
+    //private final ErrorFeign errorFeign;
+
+    private final CompanyRestService companyRestService;
+    private final ErrorRestService errorRestService;
 
     @Value("${sunat.endpoint}")
     private String endPointSunat;
@@ -87,7 +91,7 @@ public class SunatServiceImpl implements SunatService {
             System.out.println("FORMAT SOAT 2 SEGUIMIENTO");
 
             ResponseServer responseServer = null;
-            OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+            OseDto ose = companyRestService.findOseByRucInter(rucEmisor);
             if (ose != null) {
                 if (ose.getId()==1){
                     responseServer = send(formatSoap, obtenerEndPointSunat(rucEmisor),
@@ -167,7 +171,7 @@ public class SunatServiceImpl implements SunatService {
             formatSoap = getFormatGetStatus(rucEmisor,nroTicket);
 
             ResponseServer responseServer = null;
-            OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+            OseDto ose = companyRestService.findOseByRucInter(rucEmisor);
             if (ose != null) {
                 if (ose.getId()==1){
                     responseServer = send(formatSoap, obtenerEndPointSunat(rucEmisor),
@@ -221,7 +225,7 @@ public class SunatServiceImpl implements SunatService {
     }
 
     private String obtenerEndPointSunatOld(String ruc) {
-        OseDto ose = companyFeign.findOseByRucInter(ruc);
+        OseDto ose = companyRestService.findOseByRucInter(ruc);
         if (ose != null && ose.getId()!=10) {
             return ose.getUrlFacturas();
         } else {
@@ -377,7 +381,7 @@ public class SunatServiceImpl implements SunatService {
             return;
         }
 
-        errorRespuesta = errorFeign.findFirst1ByCodeAndDocument(codigoRespuesta, tipoDocumento);
+        errorRespuesta = errorRestService.findFirst1ByCodeAndDocument(codigoRespuesta, tipoDocumento);
 
         if (errorRespuesta != null) {
             if (errorRespuesta.getType().equals(TypeErrorEnum.ERROR.getType())) {
@@ -401,7 +405,7 @@ public class SunatServiceImpl implements SunatService {
     }
 
     private String getFormatGetStatus(String ruc, String nroTicket) {
-        OseDto ose = companyFeign.findOseByRucInter(ruc);
+        OseDto ose = companyRestService.findOseByRucInter(ruc);
         String formato = "";
         if (ose != null) {
             if (ose.getId()==1){
@@ -420,7 +424,7 @@ public class SunatServiceImpl implements SunatService {
     }
 
     private String obtenerEndPointSunat(String rucEmisor) {
-        OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+        OseDto ose = companyRestService.findOseByRucInter(rucEmisor);
         if (ose != null && ose.getId()!=10) {
             return ose.getUrlFacturas();
         } else {
@@ -485,7 +489,7 @@ public class SunatServiceImpl implements SunatService {
     }
 
     private String obtenerFormatBuildSendSumary(String ruc, String fileName, String contentFileBase64) {
-        OseDto ose = companyFeign.findOseByRucInter(ruc);
+        OseDto ose = companyRestService.findOseByRucInter(ruc);
         String formato = "";
         if (ose != null) {
             if (ose.getId()==1){

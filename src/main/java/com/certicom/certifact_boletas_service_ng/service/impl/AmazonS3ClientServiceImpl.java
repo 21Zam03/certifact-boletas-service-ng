@@ -9,8 +9,8 @@ import com.certicom.certifact_boletas_service_ng.dto.CompanyDto;
 import com.certicom.certifact_boletas_service_ng.dto.RegisterFileUploadDto;
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
-import com.certicom.certifact_boletas_service_ng.feign.RegisterFileUploadFeign;
-import com.certicom.certifact_boletas_service_ng.feign.SummaryDocumentsFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.RegisterFileUploadRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.SummaryDocumentsRestService;
 import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
 import com.certicom.certifact_boletas_service_ng.util.UtilDate;
 import com.google.common.io.ByteStreams;
@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.UUID;
 
@@ -37,9 +36,12 @@ import java.util.UUID;
 @Slf4j
 public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
 
-    private final RegisterFileUploadFeign registerFileUploadFeign;
     private final AmazonS3 s3client;
-    private final SummaryDocumentsFeign summaryDocumentsFeign;
+    //private final RegisterFileUploadFeign registerFileUploadFeign;
+    //private final SummaryDocumentsFeign summaryDocumentsFeign;
+
+    private final RegisterFileUploadRestService registerFileUploadRestService;
+    private final SummaryDocumentsRestService summaryDocumentsRestService;
 
     @Value("${apifact.aws.s3.bucket}")
     private String bucketName;
@@ -81,7 +83,7 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, fileNameKey, inputStream, metadata);
             this.s3client.putObject(putObjectRequest);
 
-            RegisterFileUploadDto resp = registerFileUploadFeign.saveRegisterFileUpload(RegisterFileUploadDto.builder()
+            RegisterFileUploadDto resp = registerFileUploadRestService.saveRegisterFileUpload(RegisterFileUploadDto.builder()
                     .estado("A")
                     .bucket(bucket)
                     .nombreGenerado(fileNameKey)
@@ -106,11 +108,11 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
         String tipo = tipoArchivoEnum.name();
         RegisterFileUploadDto registerFileUploadDto = null;
         if(tipoArchivoEnum.equals(TipoArchivoEnum.CDR)) {
-            Long idDccumentSummary = summaryDocumentsFeign.getIdDocumentSummaryByIdPaymentVoucher(id);
+            Long idDccumentSummary = summaryDocumentsRestService.getIdDocumentSummaryByIdPaymentVoucher(id);
             System.out.println("idDccumentSummary " + idDccumentSummary);
-            registerFileUploadDto = registerFileUploadFeign.getDataForCdr(idDccumentSummary, uuid, tipo);
+            registerFileUploadDto = registerFileUploadRestService.getDataForCdr(idDccumentSummary, uuid, tipo);
         } else {
-            registerFileUploadDto = registerFileUploadFeign.getDataForXml(id, uuid, tipo);
+            registerFileUploadDto = registerFileUploadRestService.getDataForXml(id, uuid, tipo);
         }
         ByteArrayInputStream is = downloadFileStorage(registerFileUploadDto);
         byte[] targetArray = ByteStreams.toByteArray(is);

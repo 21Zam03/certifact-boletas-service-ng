@@ -8,9 +8,9 @@ import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
 import com.certicom.certifact_boletas_service_ng.exception.SignedException;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
-import com.certicom.certifact_boletas_service_ng.feign.SummaryDocumentsFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.SummaryDocumentsRestService;
 import com.certicom.certifact_boletas_service_ng.service.*;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
@@ -30,14 +30,18 @@ import java.util.*;
 @Slf4j
 public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
 
-    //private final PaymentVoucherService paymentVoucherService;
     private final TemplateService templateService;
-    private final CompanyFeign companyFeign;
     private final SunatService sunatService;
     private final AmazonS3ClientService amazonS3ClientService;
-    private final SummaryDocumentsFeign summaryDocumentsFeign;
-    private final PaymentVoucherFeign paymentVoucherFeign;
     private final StatusService statusService;
+
+    //private final SummaryDocumentsFeign summaryDocumentsFeign;
+    //private final PaymentVoucherFeign paymentVoucherFeign;
+    //private final CompanyFeign companyFeign;
+
+    private final SummaryDocumentsRestService summaryDocumentsRestService;
+    private final PaymentVoucherRestService paymentVoucherRestService;
+    private final CompanyRestService companyRestService;
 
     @Override
     public ResponsePSE generarSummaryByFechaEmisionAndRuc(String rucEmisor, String fechaEmision, IdentificadorComprobante comprobante, String usuario) {
@@ -104,7 +108,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
                     ConstantesParameter.REGISTRO_STATUS_NUEVO);
 
             //subida del Resumen Diario y registro en la bd
-            CompanyDto companyEntity = companyFeign.findCompanyByRuc(rucEmisor);
+            CompanyDto companyEntity = companyRestService.findCompanyByRuc(rucEmisor);
             RegisterFileUploadDto file = amazonS3ClientService.uploadFileStorage(UtilArchivo.b64ToByteArrayInputStream(fileXMLZipBase64),
                     nameDocument, "summary", companyEntity);
 
@@ -140,7 +144,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
         List<RucEstadoOther> data;
 
         String estado = null;
-        data = summaryDocumentsFeign.getEstadoAndRucEmisorByNumeroTicket(ticket);
+        data = summaryDocumentsRestService.getEstadoAndRucEmisorByNumeroTicket(ticket);
         System.out.println("DATA: "+data);
         rucEmisor = data.get(0).getRucEmisor();
         estado = data.get(0).getEstado();
@@ -173,7 +177,7 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
         Summary summaryByDay = null;
         Integer correlativoSummary = null;
         Integer correlativoSummaryDto = null;
-        CompanyDto company = companyFeign.findCompanyByRuc(rucEmisor);
+        CompanyDto company = companyRestService.findCompanyByRuc(rucEmisor);
         String tipoDocumentoEmisor = ConstantesSunat.TIPO_DOCUMENTO_IDENTIDAD_RUC;
         String denominacionEmisor = company.getRazon();
         System.out.println(company.getRazon());
@@ -181,18 +185,18 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
         List<PaymentVoucherDto> comprobantesDto = new ArrayList<>();
 
         if(comprobante != null && comprobante.getTipo() != null && comprobante.getSerie() != null && comprobante.getNumero() != null) {
-            comprobantesDto = paymentVoucherFeign.findListSpecificForSummary(
+            comprobantesDto = paymentVoucherRestService.findListSpecificForSummary(
                     rucEmisor, fechaEmision, comprobante.getTipo(), comprobante.getSerie(), comprobante.getNumero());
             System.out.println("COMPROBANTE A ENVIAR POR RESUMEN: "+comprobantesDto.get(0).getEstadoItem());
         } else {
-            List<PaymentVoucherDto> listPaymentVoucherDto = paymentVoucherFeign
+            List<PaymentVoucherDto> listPaymentVoucherDto = paymentVoucherRestService
                     .findAllForSummaryByRucEmisorAndFechaEmision(rucEmisor, fechaEmision);
             System.out.println(listPaymentVoucherDto.size());
             comprobantesDto = listPaymentVoucherDto.subList(0, Math.min(listPaymentVoucherDto.size(), 400));
         }
 
         if (comprobantesDto != null && !comprobantesDto.isEmpty()) {
-            correlativoSummaryDto = summaryDocumentsFeign.getSequentialNumberInSummaryByFechaEmision(rucEmisor,
+            correlativoSummaryDto = summaryDocumentsRestService.getSequentialNumberInSummaryByFechaEmision(rucEmisor,
                     fechaEmision);
             correlativoSummaryDto++;
             int numeroLinea = 0;
@@ -350,13 +354,13 @@ public class DocumentsSummaryServiceImpl implements DocumentsSummaryService {
             */
         }
         System.out.println("TICKET SUNAT: {}"+summary.getTicketSunat());
-        summaryDocumentsFeign.save(summary);
-        paymentVoucherFeign.updateStateToSendSunatForSummaryDocuments(ids, usuario, fechaEjecucion);
+        summaryDocumentsRestService.save(summary);
+        paymentVoucherRestService.updateStateToSendSunatForSummaryDocuments(ids, usuario, fechaEjecucion);
     }
 
     private Map<String, String> getTemplateGenerated(String rucEmisor, Summary summary) throws IOException, NoSuchAlgorithmException {
         System.out.println("RUC EMISOR: "+rucEmisor);
-        OseDto ose = companyFeign.findOseByRucInter(rucEmisor);
+        OseDto ose = companyRestService.findOseByRucInter(rucEmisor);
         System.out.println("OSE: "+ose);
         if (ose != null && ose.getId()==1) {
             return templateService.buildSummaryDailySignOse(summary);

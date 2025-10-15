@@ -1,15 +1,10 @@
 package com.certicom.certifact_boletas_service_ng.validation;
 
-import com.certicom.certifact_boletas_service_ng.converter.AnticipoPaymentConverter;
-import com.certicom.certifact_boletas_service_ng.converter.DetailsPaymentVoucherConverter;
-import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
 import com.certicom.certifact_boletas_service_ng.deserializer.InputField;
-import com.certicom.certifact_boletas_service_ng.dto.AnticipoPaymentDto;
-import com.certicom.certifact_boletas_service_ng.dto.DetailsPaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
 import com.certicom.certifact_boletas_service_ng.request.AnticipoPaymentRequest;
 import com.certicom.certifact_boletas_service_ng.request.DetailsPaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
@@ -37,8 +32,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PaymentVoucherValidator extends InputField<Object> {
 
-    private final PaymentVoucherFeign paymentVoucherFeign;
-    private final CompanyFeign companyFeign;
+    //private final PaymentVoucherFeign paymentVoucherFeign;
+    //private final CompanyFeign companyFeign;
+
+    private final PaymentVoucherRestService paymentVoucherRestService;
+    private final CompanyRestService companyRestService;
 
     private final PaymentVoucherDetailValidator paymentVoucherDetailValidator;
     private final AnticipoValidator anticipoValidator;
@@ -86,7 +84,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
 
     private void validateRucAtivo(String rucEmisor) {
         try {
-            String estado = companyFeign.getStateFromCompanyByRuc(rucEmisor);
+            String estado = companyRestService.getStateFromCompanyByRuc(rucEmisor);
             if(!estado.equals(ConstantesParameter.REGISTRO_ACTIVO)) {
                 throw new ValidationException(
                         "El ruc emisor [" + rucEmisor + "] No se encuentra habilitado para ejecutar operaciones al API-REST."
@@ -255,7 +253,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
 
     private void validateNumeracion(String tipoComprobante, String serie, String rucEmisor, Integer numero) {
         try {
-            int proximo = paymentVoucherFeign.
+            int proximo = paymentVoucherRestService.
                     obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(tipoComprobante, serie, rucEmisor);
             System.out.println("PROXIMO: "+proximo);
             System.out.println("NUMERO: "+numero);
@@ -281,7 +279,7 @@ public class PaymentVoucherValidator extends InputField<Object> {
     private void validateIdentificadorDocumento(String rucEmisor, String tipoComprobante, String serie, Integer numero, boolean isEdit) {
         try {
             String idDocumento = rucEmisor + "-" + tipoComprobante + "-" + serie + "-" + numero;
-            PaymentVoucherDto identificadorEntity = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(idDocumento);
+            PaymentVoucherDto identificadorEntity = paymentVoucherRestService.getPaymentVoucherByIdentificadorDocumento(idDocumento);
             if (identificadorEntity != null && !isEdit) {
                 throw new ValidationException(
                         "El comprobante ya ha sido registrado [" + rucEmisorLabel + ":" + rucEmisor + "; "

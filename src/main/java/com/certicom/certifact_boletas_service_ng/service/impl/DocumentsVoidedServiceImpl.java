@@ -10,7 +10,7 @@ import com.certicom.certifact_boletas_service_ng.dto.others.Voided;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
 import com.certicom.certifact_boletas_service_ng.jms.SqsProducer;
 import com.certicom.certifact_boletas_service_ng.request.VoucherAnnularRequest;
 import com.certicom.certifact_boletas_service_ng.service.DocumentsSummaryService;
@@ -31,9 +31,11 @@ import java.util.*;
 public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
 
     private final VoucherAnnularValidator voucherAnnularValidator;
-    private final PaymentVoucherFeign paymentVoucherFeign;
     private final DocumentsSummaryService documentsSummaryService;
     private final SqsProducer sqsProducer;
+
+    //private final PaymentVoucherFeign paymentVoucherFeign;
+    private final PaymentVoucherRestService paymentVoucherRestService;
 
     @Override
     public VoidedDocumentsDto registrarVoidedDocuments(Voided voided, Long idRegisterFile, String usuario, String ticket) {
@@ -57,7 +59,7 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
                         documento.getSerie().toUpperCase() + "-" + documento.getNumero();
                 System.out.println("INDENTIFICADOR : "+identificadorDocumento);
 
-                PaymentVoucherDto entity = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
+                PaymentVoucherDto entity = paymentVoucherRestService.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
                 System.out.println("Paymente: "+entity);
                 if (documento.getRucEmisor()==null){
                     documento.setRucEmisor(rucEmisor);
@@ -72,7 +74,7 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
                         document.getSerie().toUpperCase() + "-" + document.getNumero();
                 System.out.println(identificadorDocumento);
                 boolean noExiste = false;
-                PaymentVoucherDto entity = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
+                PaymentVoucherDto entity = paymentVoucherRestService.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
                 if (entity==null){
                     noExiste=true;
                 }
@@ -157,7 +159,7 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
         identificador = voucherInput.getRucEmisor() + "-" + voucherInput.getTipoComprobante() + "-"
                 + voucherInput.getSerie().toUpperCase() + "-" + voucherInput.getNumero();
 
-        PaymentVoucherDto boletaOrNoteBoleta = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(identificador);
+        PaymentVoucherDto boletaOrNoteBoleta = paymentVoucherRestService.getPaymentVoucherByIdentificadorDocumento(identificador);
         //SI QUIERO ANULAR UN COMPROBANTE ANTES DE QUE ESTE ACEPTADO EN SUNAT, SETEO UN FLAG
         if (!boletaOrNoteBoleta.getEstadoSunat().equals(EstadoSunatEnum.ACEPTADO.getAbreviado())) {
             boletaOrNoteBoleta.setBoletaAnuladaSinEmitir(true);
@@ -170,7 +172,7 @@ public class DocumentsVoidedServiceImpl implements DocumentsVoidedService {
         boletaOrNoteBoleta.setFechaModificacion(fechaModificacion);
         boletaOrNoteBoleta.setEstadoItem(ConstantesParameter.STATE_ITEM_PENDIENTE_ANULACION);
 
-        paymentVoucherFeign.save(boletaOrNoteBoleta);
+        paymentVoucherRestService.save(boletaOrNoteBoleta);
 
         /*
         Logger.register(TipoLogEnum.INFO, voucherInput.getRucEmisor(), identificador, OperacionLogEnum.REGISTER_ANULAR_VOUCHER,

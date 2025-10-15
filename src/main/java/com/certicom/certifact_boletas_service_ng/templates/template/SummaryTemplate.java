@@ -3,8 +3,11 @@ package com.certicom.certifact_boletas_service_ng.templates.template;
 import com.certicom.certifact_boletas_service_ng.dto.others.Summary;
 import com.certicom.certifact_boletas_service_ng.dto.others.SummaryDetailDto;
 import com.certicom.certifact_boletas_service_ng.dto.others.Tipo;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -208,7 +211,9 @@ public class SummaryTemplate {
 
             xml = formatXML(writer.toString());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
+            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(),
+                    LogMessages.currentMethod(), "Ocurrio un error inesperado al momento de generar la plantilla xml", ex);
             throw new TemplateException(ex.getMessage());
         }
         return xml;

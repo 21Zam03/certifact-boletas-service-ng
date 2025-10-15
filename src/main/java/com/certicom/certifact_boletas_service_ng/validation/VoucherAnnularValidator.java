@@ -5,9 +5,9 @@ import com.certicom.certifact_boletas_service_ng.dto.ParameterDto;
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.exception.ValidationException;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.ParameterFeign;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.ParameterRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
 import com.certicom.certifact_boletas_service_ng.request.VoucherAnnularRequest;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
@@ -25,12 +25,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VoucherAnnularValidator extends InputField<Object> {
 
-    private final ParameterFeign parameterFeign;
-    private final CompanyFeign companyFeign;
-    private final PaymentVoucherFeign paymentVoucherFeign;
+    //private final ParameterFeign parameterFeign;
+    //private final CompanyFeign companyFeign;
+    //private final PaymentVoucherFeign paymentVoucherFeign;
+
+    private final ParameterRestService parameterRestService;
+    private final CompanyRestService companyRestService;
+    private final PaymentVoucherRestService paymentVoucherRestService;
 
     public void validateVoucherAnnular(List<VoucherAnnularRequest> documentos, String rucEmisor) {
-        ParameterDto parametroEntity = parameterFeign.findByName(ConstantesParameter.RANGO_DIAS_BAJA_DOCUMENTOS);
+        ParameterDto parametroEntity = parameterRestService.findByName(ConstantesParameter.RANGO_DIAS_BAJA_DOCUMENTOS);
         Integer rangoFechaAceptable = Integer.parseInt(parametroEntity.getValue());
 
         validateRucActivo(rucEmisor);
@@ -68,7 +72,7 @@ public class VoucherAnnularValidator extends InputField<Object> {
         EstadoComprobanteEnum estadoComprobante = null;
         System.out.println("tipo de documento: "+tipoDocumento.getClass().getSimpleName());
 
-        PaymentVoucherDto entity = paymentVoucherFeign.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
+        PaymentVoucherDto entity = paymentVoucherRestService.getPaymentVoucherByIdentificadorDocumento(identificadorDocumento);
         if (entity==null){
             noExiste=true;
         }else {
@@ -178,7 +182,7 @@ public class VoucherAnnularValidator extends InputField<Object> {
     }
 
     private void validateRucActivo(String rucEmisor) {
-        String estado = companyFeign.getStateFromCompanyByRuc(rucEmisor);
+        String estado = companyRestService.getStateFromCompanyByRuc(rucEmisor);
         if (!estado.equals(ConstantesParameter.REGISTRO_ACTIVO)) {
             throw new ValidationException("El ruc emisor [" + rucEmisor + "] No se encuentra habilitado para "
                     + "ejecutar operaciones al API-REST.");

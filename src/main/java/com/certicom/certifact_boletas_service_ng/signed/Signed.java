@@ -1,9 +1,13 @@
 package com.certicom.certifact_boletas_service_ng.signed;
 
 import com.certicom.certifact_boletas_service_ng.dto.others.SignatureResp;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
 import com.certicom.certifact_boletas_service_ng.exception.SignedException;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import com.certicom.certifact_boletas_service_ng.util.UtilConversion;
 import com.certicom.certifact_boletas_service_ng.util.UtilXml.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
@@ -37,6 +41,7 @@ import java.util.Enumeration;
 import static com.certicom.certifact_boletas_service_ng.util.UtilSigned.*;
 
 @Component
+@Slf4j
 public class Signed {
 
     @Value("${apifact.keystoreblizlink.file}")
@@ -127,7 +132,8 @@ public class Signed {
             response.setStatus(!signatureFile.toString().trim().isEmpty() && digestValue != null && !digestValue.trim().isEmpty());
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
+            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado al firmar documento xml", ex);
             throw new SignedException("Error al firmar documento xml: " + (ex == null ? "" : ex.getMessage()));
         }
         return response;

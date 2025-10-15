@@ -12,10 +12,10 @@ import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
-import com.certicom.certifact_boletas_service_ng.feign.CompanyFeign;
-import com.certicom.certifact_boletas_service_ng.feign.PaymentVoucherFeign;
-import com.certicom.certifact_boletas_service_ng.feign.SummaryDocumentsFeign;
-import com.certicom.certifact_boletas_service_ng.feign.VoidedDocumentsFeign;
+import com.certicom.certifact_boletas_service_ng.feign.rest.CompanyRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.PaymentVoucherRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.SummaryDocumentsRestService;
+import com.certicom.certifact_boletas_service_ng.feign.rest.VoidedDocumentsRestService;
 import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
 import com.certicom.certifact_boletas_service_ng.service.StatusService;
 import com.certicom.certifact_boletas_service_ng.service.SunatService;
@@ -36,11 +36,17 @@ import java.util.*;
 public class StatusServiceImpl implements StatusService {
 
     private final SunatService sunatService;
-    private final SummaryDocumentsFeign summaryDocumentsFeign;
-    private final VoidedDocumentsFeign voidedDocumentsFeign;
-    private final CompanyFeign companyFeign;
     private final AmazonS3ClientService amazonS3ClientService;
-    private final PaymentVoucherFeign paymentVoucherFeign;
+
+    //private final SummaryDocumentsFeign summaryDocumentsFeign;
+    //private final VoidedDocumentsFeign voidedDocumentsFeign;
+    //private final CompanyFeign companyFeign;
+    //private final PaymentVoucherFeign paymentVoucherFeign;
+
+    private final SummaryDocumentsRestService summaryDocumentsRestService;
+    private final VoidedDocumentsRestService voidedDocumentsRestService;
+    private final CompanyRestService companyRestService;
+    private final PaymentVoucherRestService paymentVoucherRestService;
 
     @Override
     public ResponsePSE getStatus(String numeroTicket, String tipoResumen, String userName, String rucEmisor) {
@@ -145,10 +151,10 @@ public class StatusServiceImpl implements StatusService {
     private void comunicacionPendiente(String tipoDocumentoResumen, String numeroTicket, ResponsePSE responsePSE) {
 
         if (tipoDocumentoResumen.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
-            Summary summary = summaryDocumentsFeign.findByTicket(numeroTicket);
+            Summary summary = summaryDocumentsRestService.findByTicket(numeroTicket);
             Integer intentos = summary.getIntentosGetStatus() != null ? summary.getIntentosGetStatus() : 0;
             summary.setIntentosGetStatus(intentos + 1);
-            summary = summaryDocumentsFeign.save(summary);
+            summary = summaryDocumentsRestService.save(summary);
             responsePSE.setIntentosGetStatus(summary.getIntentosGetStatus());
         } else {
             /*
@@ -194,7 +200,7 @@ public class StatusServiceImpl implements StatusService {
         estadoDocumentInBD = getEstadoDocumentoResumenInBD(tipoDocumentoResumen, numeroTicket);
         if (estadoDocumentInBD.equals(ConstantesParameter.STATE_SUMMARY_VOIDED_DOCUMENTS_IN_PROCESO)) {
             System.out.println("INGRESO VOIDED 98");
-            CompanyDto companyEntity = companyFeign.findCompanyByRuc(rucEmisor);
+            CompanyDto companyEntity = companyRestService.findCompanyByRuc(rucEmisor);
             RegisterFileUploadDto file = amazonS3ClientService.uploadFileStorage(UtilArchivo.b64ToByteArrayInputStream(fileBase64),
                     nameDocument, "summary", companyEntity);
 
@@ -208,11 +214,11 @@ public class StatusServiceImpl implements StatusService {
             System.out.println("INGRESO VOIDED 99"+tipoDocumentoResumen);
             if (tipoDocumentoResumen.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
                 try {
-                    Summary summaryDocumentEntity = summaryDocumentsFeign.findByTicket(numeroTicket);
+                    Summary summaryDocumentEntity = summaryDocumentsRestService.findByTicket(numeroTicket);
                     if (summaryDocumentEntity != null) {
                         String finalRucEmisor = rucEmisor;
                         summaryDocumentEntity.getItems().forEach(detailDocsSummaryEntity -> {
-                            PaymentVoucherDto paymentVoucherEntity = paymentVoucherFeign
+                            PaymentVoucherDto paymentVoucherEntity = paymentVoucherRestService
                                     .findByRucAndTipoAndSerieAndNumero(
                                             finalRucEmisor, detailDocsSummaryEntity.getTipoComprobante(),
                                             detailDocsSummaryEntity.getSerie(),
@@ -234,9 +240,9 @@ public class StatusServiceImpl implements StatusService {
     public String getEstadoDocumentoResumenInBD(String tipoDocumento, String numeroTicket) {
         String estado;
         if (tipoDocumento.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
-            estado = summaryDocumentsFeign.getEstadoByNumeroTicket(numeroTicket);
+            estado = summaryDocumentsRestService.getEstadoByNumeroTicket(numeroTicket);
         } else {
-            estado = voidedDocumentsFeign.getEstadoByNumeroTicket(numeroTicket);
+            estado = voidedDocumentsRestService.getEstadoByNumeroTicket(numeroTicket);
         }
         return estado;
     }
@@ -261,7 +267,7 @@ public class StatusServiceImpl implements StatusService {
 
         if (tipoDocumento.equals(ConstantesSunat.RESUMEN_DIARIO_BOLETAS)) {
             Summary summary;
-            summary = summaryDocumentsFeign.findByTicket(numeroTicket);
+            summary = summaryDocumentsRestService.findByTicket(numeroTicket);
             System.out.println("SUMMARY: "+summary.getItems());
             rucEmisor = summary.getRucEmisor();
             summary.setEstado(estado);
@@ -279,7 +285,7 @@ public class StatusServiceImpl implements StatusService {
                         .tipoArchivo(TipoArchivoEnum.CDR.name())
                         .build());
             }
-            summaryDocumentsFeign.save(summary);
+            summaryDocumentsRestService.save(summary);
 
             msgLog.append("{").append(ConstantesParameter.MSG_RESP_SUB_PROCESO_OK).append("}").
                     append("{numeroTicket:").append(numeroTicket).append("}{estado:").append(estado).
@@ -353,7 +359,7 @@ public class StatusServiceImpl implements StatusService {
                     if (!comprobantesByAceptar.isEmpty()) {
                         // LEYTER
                         System.out.println("SEGUIMIENTO 024");
-                        paymentVoucherFeign.updateComprobantesBySummaryDocuments(
+                        paymentVoucherRestService.updateComprobantesBySummaryDocuments(
                                 comprobantesByAceptar,
                                 EstadoComprobanteEnum.ACEPTADO.getCodigo(),
                                 EstadoSunatEnum.ACEPTADO.getAbreviado(),
@@ -408,7 +414,7 @@ public class StatusServiceImpl implements StatusService {
                     System.out.println("INGRESAMOS A ANULAR BOLETAS");
                     if (!comprobantesByAnular.isEmpty()) {
                         System.out.println("ANULANDO COMPROBANTES: "+comprobantesByAnular.size());
-                        paymentVoucherFeign.updateComprobantesBySummaryDocuments(
+                        paymentVoucherRestService.updateComprobantesBySummaryDocuments(
                                 comprobantesByAnular,
                                 EstadoComprobanteEnum.ANULADO.getCodigo(),
                                 EstadoSunatEnum.ANULADO.getAbreviado(),
@@ -470,7 +476,7 @@ public class StatusServiceImpl implements StatusService {
                 }
                 break;
             case ERROR:
-                paymentVoucherFeign.updateComprobantesOnResumenError(
+                paymentVoucherRestService.updateComprobantesOnResumenError(
                         identificadoresComprobantes, usuario, fechaModificacion);
 
                 msgLog.setLength(0);
