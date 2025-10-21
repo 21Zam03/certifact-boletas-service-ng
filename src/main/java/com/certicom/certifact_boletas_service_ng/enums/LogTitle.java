@@ -3,7 +3,10 @@ package com.certicom.certifact_boletas_service_ng.enums;
 public enum LogTitle {
 
     ERROR_UNEXPECTED("Error unexpected"),
-    ERROR_HTTP("Error http"),
+    ERROR_HTTP_CLIENT("Error httpclient"),
+    ERROR_HTTP_RED("Error httpred"),
+    ERROR_HTTP_SERVER("Error httpserver"),
+    ERROR_HTTP("Error httpgeneral"),
 
     //Advertencia para validaciones, no corta el flujo de la peticion pero si es una observacion a tener en cuenta si se presenta.
     WARN_VALIDATION("Validation"),

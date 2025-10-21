@@ -7,6 +7,9 @@ public class LogMessages {
     }
 
     public static final String ERROR_UNEXPECTED = "Error inesperado";
-    public static final String ERROR_HTTP = "Error al consultar servicio externo";
+
+    public static final String ERROR_HTTP = "Error al comunicarse con el servicio externo";
+    public static final String ERROR_HTTP_RED = "Error de conexión con el servicio externo";
+    public static final String ERROR_HTTP_SERVER = "Error del servicio externo";
 
 }

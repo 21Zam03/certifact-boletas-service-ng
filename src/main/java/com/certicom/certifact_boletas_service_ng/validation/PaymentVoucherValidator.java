@@ -83,20 +83,10 @@ public class PaymentVoucherValidator extends InputField<Object> {
     }
 
     private void validateRucAtivo(String rucEmisor) {
-        try {
-            String estado = companyRestService.getStateFromCompanyByRuc(rucEmisor);
-            if(!estado.equals(ConstantesParameter.REGISTRO_ACTIVO)) {
-                throw new ValidationException(
-                        "El ruc emisor [" + rucEmisor + "] No se encuentra habilitado para ejecutar operaciones al API-REST."
-                );
-            }
-        } catch (FeignException fe) {
+        String estado = companyRestService.getStateFromCompanyByRuc(rucEmisor);
+        if(!estado.equals(ConstantesParameter.REGISTRO_ACTIVO)) {
             throw new ValidationException(
-                    "No se pudo validar el estado del RUC emisor [" + rucEmisor + "]. Error al comunicarse con el servicio de validación: " + fe.getMessage()
-            );
-        } catch (Exception e) {
-            throw new ValidationException(
-                    "Error inesperado al validar el estado del RUC emisor [" + rucEmisor + "]: " + e.getMessage()
+                    "El ruc emisor [" + rucEmisor + "] No se encuentra habilitado para ejecutar operaciones al API-REST."
             );
         }
     }
@@ -252,26 +242,17 @@ public class PaymentVoucherValidator extends InputField<Object> {
     }
 
     private void validateNumeracion(String tipoComprobante, String serie, String rucEmisor, Integer numero) {
-        try {
-            int proximo = paymentVoucherRestService.
-                    obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(tipoComprobante, serie, rucEmisor);
-            if (proximo > 1){
-                int diferencia = numero - proximo;
-                if (diferencia > 120){
-                    LogHelper.warnLog(LogTitle.WARN_VALIDATION.getType(),
-                            LogMessages.currentMethod(), "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones.");
-                    throw new ValidationException(
-                            "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones."
-                    );
-                }
+        int proximo = paymentVoucherRestService.
+                obtenerSiguienteNumeracionPorTipoComprobanteYSerieYRucEmisor(tipoComprobante, serie, rucEmisor);
+        if (proximo > 1){
+            int diferencia = numero - proximo;
+            if (diferencia > 120){
+                LogHelper.warnLog(LogTitle.WARN_VALIDATION.getType(),
+                        LogMessages.currentMethod(), "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones.");
+                throw new ValidationException(
+                        "El numero [" + numero + "] difiere de su antecesor en " + proximo + " posiciones."
+                );
             }
-        } catch (FeignException fe) {
-            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
-                    "Error al comunicarse con el servicio externo ", fe);
-            throw new ServiceException(LogMessages.ERROR_HTTP, fe);
-        } catch (Exception e) {
-            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado", e);
-            throw new ServiceException(LogMessages.ERROR_UNEXPECTED, e);
         }
     }
 

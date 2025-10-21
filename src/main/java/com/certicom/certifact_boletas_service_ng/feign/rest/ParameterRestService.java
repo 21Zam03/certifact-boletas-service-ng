@@ -1,9 +1,13 @@
 package com.certicom.certifact_boletas_service_ng.feign.rest;
 
 import com.certicom.certifact_boletas_service_ng.dto.ParameterDto;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
@@ -22,7 +26,25 @@ public class ParameterRestService {
         String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/api/parameter/name")
                 .queryParam("name", name)
                 .toUriString();
-        return restTemplate.getForObject(url, ParameterDto.class);
+        try {
+            return restTemplate.getForObject(url, ParameterDto.class);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
 }

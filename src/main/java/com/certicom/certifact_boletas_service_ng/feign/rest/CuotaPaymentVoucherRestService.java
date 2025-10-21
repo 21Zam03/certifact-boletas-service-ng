@@ -1,11 +1,12 @@
 package com.certicom.certifact_boletas_service_ng.feign.rest;
 
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 @Service
 public class CuotaPaymentVoucherRestService {
@@ -27,12 +28,22 @@ public class CuotaPaymentVoucherRestService {
         try {
             restTemplate.delete(url);
             return 1;
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
             return 0;
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new RuntimeException("Error al eliminar la cuota de pago: " + e.getMessage(), e);
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }
     }
 

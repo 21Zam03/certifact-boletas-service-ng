@@ -2,8 +2,6 @@ package com.certicom.certifact_boletas_service_ng.controller;
 
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
-import com.google.common.io.ByteStreams;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -14,14 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 @RestController
-@RequestMapping(BoletaFileController.API_PATH)
+@RequestMapping(BoletaFileController.API_PATH_TEST)
 @RequiredArgsConstructor
 public class BoletaFileController {
 
     public static final String API_PATH = "/api/internal/file";
+    public static final String API_PATH_TEST = "/api";
 
     private final AmazonS3ClientService amazonS3ClientService;
 
@@ -35,8 +33,8 @@ public class BoletaFileController {
     }
 
     /*DESCARGA EL XML DEL COMPROBANTE UNICO, no el xml del resumen diario*/
-    @GetMapping("/descargaxmluuid/{id}/{uuid}")
-    public ResponseEntity<?> downloadXML(@PathVariable Long id, @PathVariable String uuid) throws IOException {
+    @GetMapping("/descargaxmluuid/{id}/{uuid}/{nameDocument}")
+    public ResponseEntity<?> downloadXML(@PathVariable Long id, @PathVariable String uuid, @PathVariable String nameDocument) throws IOException {
         ByteArrayResource resource = amazonS3ClientService.downloadFileInvoice(id, uuid, TipoArchivoEnum.XML);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))

@@ -1,13 +1,12 @@
 package com.certicom.certifact_boletas_service_ng.config;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class S3Config {
@@ -22,13 +21,12 @@ public class S3Config {
     private String region;
 
     @Bean
-    public AmazonS3 s3client() {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(awsId, awsKey);
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
-                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+    public S3Client s3Client() {
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(awsId, awsKey);
+        return S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
-        return s3Client;
     }
 
 }

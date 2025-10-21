@@ -14,10 +14,7 @@ import com.certicom.certifact_boletas_service_ng.feign.*;
 import com.certicom.certifact_boletas_service_ng.feign.rest.*;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
-import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
-import com.certicom.certifact_boletas_service_ng.service.DocumentsSummaryService;
-import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
-import com.certicom.certifact_boletas_service_ng.service.TemplateService;
+import com.certicom.certifact_boletas_service_ng.service.*;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
 import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
 import com.certicom.certifact_boletas_service_ng.util.UUIDGen;
@@ -45,6 +42,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final TemplateService templateService;
     private final AmazonS3ClientService amazonS3ClientService;
     private final DocumentsSummaryService documentsSummaryService;
+    private final HistorialStockService historialStockService;
     //private final DetailPaymentVoucherFeign detailPaymentVoucherFeign;
     //private final AnticipoFeign anticipoFeign;
     //private final AditionalFieldFeign aditionalFieldFeign;
@@ -289,7 +287,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
             paymentVoucherDto.setCodigoHash(plantillaGenerado.get(ConstantesParameter.CODIGO_HASH));
 
             RegisterFileUploadDto archivoSubido = subirXmlComprobante(companyDto, plantillaGenerado);
-
+            System.out.println("ARCHIO SUBIDO");
             comprobanteCreado = updateVoucher(paymentVoucherDto, paymentVoucherDtoOld, archivoSubido.getIdRegisterFileSend(), userLogged.getNombreUsuario());
             System.out.println("COMPROBANTE CREADO: "+comprobanteCreado);
             sendBoletaDto = createSendBoleta(companyDto, paymentVoucherDto);
@@ -314,7 +312,6 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     }
 
     private void validateAutomaticDelivery(SendBoletaDto sendBoletaDto) {
-        System.out.println("SEND BOLETA DTO: "+sendBoletaDto);
         if(sendBoletaDto!=null && sendBoletaDto.getEnvioDirecto()) {
             ResponsePSE responsePSE;
             try {
@@ -423,45 +420,38 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         List<AditionalFieldPaymentVoucherDto> adicionales = paymentVoucherDtoOld.getCamposAdicionales();
         List<PaymentCuotasDto> cuotas = paymentVoucherDtoOld.getCuotas();
         List<GuiaPaymentVoucherDto> guias = paymentVoucherDtoOld.getGuiasRelacionadas();
-
         if (items != null && !items.isEmpty()) {
             for (DetailsPaymentVoucherDto item : items) {
-                //historialStockService.eliminarHistorialStockByDetail(item);
-                System.out.println("Eliminar items - stock del comprobante");
+                historialStockService.eliminarHistorialStockByDetail(item);
             }
             for (DetailsPaymentVoucherDto item : items) {
                 detailPaymentVoucherRestService.deleteDetailPaymentVoucherById(item.getIdComprobanteDetalle());
-                System.out.println("Eliminar items del comprobante");
             }
         }
         if (anticipos != null && !anticipos.isEmpty()) {
             for (AnticipoPaymentDto anticipo : anticipos) {
-                anticipoRestService.deleteAnticipoById(anticipo.getIdAnticipoPayment());
-                System.out.println("Eliminar anticipos del comprobante");
+                int result = anticipoRestService.deleteAnticipoById(anticipo.getIdAnticipoPayment());
             }
         }
         if (adicionales != null && !adicionales.isEmpty()) {
             for (AditionalFieldPaymentVoucherDto adicional : adicionales) {
                 aditionalFieldRestService.deleteAditionalFieldPaymentById(Long.valueOf(adicional.getId()));
-                System.out.println("Eliminar campos adicionales del comprobante");
             }
         }
         if (cuotas != null && !cuotas.isEmpty()) {
             for (PaymentCuotasDto cuota : cuotas) {
                 cuotaPaymentVoucherRestService.deletePaymentCuotaById(cuota.getIdCuotas());
-                System.out.println("Eliminar cuotas del comprobante");
             }
         }
         if (guias != null && !guias.isEmpty()) {
             for (GuiaPaymentVoucherDto guia : guias) {
                 guiaPaymentRestService.deleteGuiaPaymentById(guia.getIdPaymentVoucher());
-                System.out.println("Eliminar guias relacionadas del comprobante");
             }
         }
 
         paymentVoucherDto.setIdPaymentVoucher(paymentVoucherDtoOld.getIdPaymentVoucher());
         paymentVoucherDto.setUuid(paymentVoucherDtoOld.getUuid());
-        paymentVoucherDto.setPaymentVoucherFileModelList(paymentVoucherDtoOld.getPaymentVoucherFileModelList());
+        paymentVoucherDto.setPaymentVoucherFileDtoList(paymentVoucherDtoOld.getPaymentVoucherFileDtoList());
         paymentVoucherDto.setFechaRegistro(new Timestamp(Calendar.getInstance().getTime().getTime()));
 
         paymentVoucherDto.setIdentificadorDocumento(paymentVoucherDto.getRucEmisor()+ "-" +paymentVoucherDto.getTipoComprobante()+ "-" +
@@ -477,6 +467,8 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         paymentVoucherDto.setUserName(paymentVoucherDtoOld.getUserName());
         paymentVoucherDto.setUserNameModificacion(nombreUsuario);
 
+        paymentVoucherDto.setPaymentVoucherFileDtoList(paymentVoucherDtoOld.getPaymentVoucherFileDtoList());
+        System.out.println("ID: "+paymentVoucherDto.getPaymentVoucherFileDtoList().get(0).getId());
         if (idRegisterFile != null) {
             paymentVoucherDto.addPaymentVoucherFile(PaymentVoucherFileDto.builder()
                     .estadoArchivo(EstadoArchivoEnum.ACTIVO.name())
@@ -505,7 +497,6 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         String fileXMLZipBase64 = plantillaGenerado.get(ConstantesParameter.PARAM_FILE_ZIP_BASE64);
         RegisterFileUploadDto archivo = amazonS3ClientService.uploadFileStorage(UtilArchivo.b64ToByteArrayInputStream(fileXMLZipBase64),
                 nombreDocumento, "invoice", companyDto);
-        log.info("ARVHIVO SUBIDO: {}", archivo.toString());
         return archivo;
     }
 

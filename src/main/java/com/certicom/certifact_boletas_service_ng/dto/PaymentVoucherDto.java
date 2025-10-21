@@ -108,14 +108,14 @@ public class PaymentVoucherDto {
     private Boolean boletaAnuladaSinEmitir;
     private String motivoAnulacion;
 
-    private List<PaymentVoucherFileDto> paymentVoucherFileModelList;
+    private List<PaymentVoucherFileDto> paymentVoucherFileDtoList;
 
     @JsonIgnore
     public List<PaymentVoucherFileDto> getOrCreatePaymentVoucherFile() {
-        if (this.paymentVoucherFileModelList == null) {
-            this.paymentVoucherFileModelList = new ArrayList<PaymentVoucherFileDto>();
+        if (this.paymentVoucherFileDtoList == null) {
+            this.paymentVoucherFileDtoList = new ArrayList<PaymentVoucherFileDto>();
         }
-        return this.paymentVoucherFileModelList;
+        return this.paymentVoucherFileDtoList;
     }
 
     @JsonIgnore
@@ -128,7 +128,6 @@ public class PaymentVoucherDto {
                 }
             });
         }
-        System.out.println("LISTA: "+getOrCreatePaymentVoucherFile().size());
         getOrCreatePaymentVoucherFile().add(paymentVoucherFileModel);
     }
 

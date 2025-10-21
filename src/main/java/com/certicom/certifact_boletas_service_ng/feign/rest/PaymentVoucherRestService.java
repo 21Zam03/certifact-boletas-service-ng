@@ -1,11 +1,15 @@
 package com.certicom.certifact_boletas_service_ng.feign.rest;
 
 import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.sql.Timestamp;
@@ -32,33 +36,109 @@ public class PaymentVoucherRestService {
                 .queryParam("serie", serie)
                 .queryParam("ruc", ruc)
                 .toUriString();
-        return restTemplate.getForObject(url, Integer.class);
+        try {
+            return restTemplate.getForObject(url, Integer.class);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public PaymentVoucherDto getPaymentVoucherByIdentificadorDocumento(String identificadorDocumento) {
         String url = UriComponentsBuilder.fromHttpUrl(getUrlEndpoint()+"/id-document")
                 .queryParam("identificadorDocumento", identificadorDocumento)
                 .toUriString();
-        return restTemplate.getForObject(url, PaymentVoucherDto.class);
+        try {
+          return restTemplate.getForObject(url, PaymentVoucherDto.class);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public PaymentVoucherDto save(PaymentVoucherDto paymentVoucherDto) {
         String url = getUrlEndpoint();
-        return restTemplate.postForObject(url, paymentVoucherDto, PaymentVoucherDto.class);
+        try {
+            return restTemplate.postForObject(url, paymentVoucherDto, PaymentVoucherDto.class);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public PaymentVoucherDto update(PaymentVoucherDto paymentVoucherDto) {
+        System.out.println("UPDATE");
         String url = getUrlEndpoint();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<PaymentVoucherDto> requestEntity = new HttpEntity<>(paymentVoucherDto, headers);
-        ResponseEntity<PaymentVoucherDto> response = restTemplate.exchange(
-                url,
-                HttpMethod.PUT,
-                requestEntity,
-                PaymentVoucherDto.class
-        );
-        return response.getBody();
+        try {
+            ResponseEntity<PaymentVoucherDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    requestEntity,
+                    PaymentVoucherDto.class
+            );
+            if(response.getBody() != null) {
+                LogHelper.infoLog(LogTitle.INFO.getType(), LogMessages.currentMethod(), "La consulta se realizo exitosamente");
+            }
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public List<PaymentVoucherDto> findListSpecificForSummary(
@@ -74,13 +154,31 @@ public class PaymentVoucherRestService {
                 .queryParam("serie", serie)
                 .queryParam("numero", numero)
                 .toUriString();
-        ResponseEntity<List<PaymentVoucherDto>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<List<PaymentVoucherDto>>() {}
-        );
-        return response.getBody();
+        try {
+            ResponseEntity<List<PaymentVoucherDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<PaymentVoucherDto>>() {}
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public List<PaymentVoucherDto> findAllForSummaryByRucEmisorAndFechaEmision(String rucEmisor, String fechaEmision) {
@@ -88,14 +186,32 @@ public class PaymentVoucherRestService {
                 .queryParam("rucEmisor", rucEmisor)
                 .queryParam("fechaEmision", fechaEmision)
                 .toUriString();
-
-        ResponseEntity<List<PaymentVoucherDto>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<List<PaymentVoucherDto>>() {}
-        );
-        return response.getBody();
+        try {
+            ResponseEntity<List<PaymentVoucherDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<PaymentVoucherDto>>() {
+                    }
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public void updateStateToSendSunatForSummaryDocuments(List<Long> ids, String usuario, Timestamp fechaModificacion) {
@@ -105,7 +221,24 @@ public class PaymentVoucherRestService {
                 .queryParam("usuario", usuario)
                 .queryParam("fechaModificacion", fechaIso)
                 .toUriString();
-        restTemplate.put(url, null);
+        try {
+            restTemplate.put(url, null);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public void updateComprobantesBySummaryDocuments(
@@ -121,7 +254,24 @@ public class PaymentVoucherRestService {
                 .queryParam("usuario", usuario)
                 .queryParam("fechaModificacion", fechaModificacion)
                 .toUriString();
-        restTemplate.put(url, null);
+        try {
+            restTemplate.put(url, null);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public void updateComprobantesOnResumenError(
@@ -133,7 +283,24 @@ public class PaymentVoucherRestService {
                 .queryParam("usuario", usuario)
                 .queryParam("fechaModificacion", fechaModificacion)
                 .toUriString();
-        restTemplate.put(url, null);
+        try {
+            restTemplate.put(url, null);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     public PaymentVoucherDto findByRucAndTipoAndSerieAndNumero(
@@ -147,7 +314,25 @@ public class PaymentVoucherRestService {
                 .queryParam("serie", serie)
                 .queryParam("numero", numero)
                 .toUriString();
-        return restTemplate.getForObject(url, PaymentVoucherDto.class);
+        try {
+            return restTemplate.getForObject(url, PaymentVoucherDto.class);
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
+        } catch (ResourceAccessException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
+        }
     }
 
     private String getUrlEndpoint() {

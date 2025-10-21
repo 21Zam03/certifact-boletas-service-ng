@@ -2,13 +2,14 @@ package com.certicom.certifact_boletas_service_ng.feign.rest;
 
 import com.certicom.certifact_boletas_service_ng.dto.CompanyDto;
 import com.certicom.certifact_boletas_service_ng.dto.OseDto;
+import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
+import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
+import com.certicom.certifact_boletas_service_ng.util.LogHelper;
+import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 @Service
 public class CompanyRestService {
@@ -30,12 +31,22 @@ public class CompanyRestService {
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             return response.getBody();
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+e.getMessage());
             return null;
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new RuntimeException("Error al obtener el estado de la empresa: " + e.getMessage(), e);
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }
     }
 
@@ -44,12 +55,22 @@ public class CompanyRestService {
         try {
             ResponseEntity<CompanyDto> response = restTemplate.getForEntity(url, CompanyDto.class);
             return response.getBody();
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error 4xx al comunicarse con el servicio externo", e);
             return null;
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new RuntimeException("Error al obtener la empresa: " + e.getMessage(), e);
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error 5xx al comunicarse con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }
     }
 
@@ -58,12 +79,22 @@ public class CompanyRestService {
         try {
             ResponseEntity<OseDto> response = restTemplate.getForEntity(url, OseDto.class);
             return response.getBody();
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException e) {
+            LogHelper.warnLog(LogTitle.ERROR_HTTP_CLIENT.getType(), LogMessages.currentMethod(),
+                    "Error 4xx al comunicarse con el servicio externo", e);
             return null;
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw new RuntimeException("Error al obtener el OSE: " + e.getMessage(), e);
+        } catch (HttpServerErrorException e) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_SERVER.getType(), LogMessages.currentMethod(),
+                    "Error 5xx al comunicarse con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            throw new RuntimeException("No se pudo conectar al servicio boletas-service-sp", e);
+            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+                    "Error de conexión con el servicio externo", e);
+            throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
+        } catch (RestClientException ex) {
+            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+                    "Error inesperado al comunicarse con el servicio externo", ex);
+            throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }
     }
 
