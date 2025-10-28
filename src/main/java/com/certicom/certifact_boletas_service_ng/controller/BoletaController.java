@@ -15,13 +15,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(BoletaController.API_PATH_TEST)
+@RequestMapping(BoletaController.API_PATH)
 @RequiredArgsConstructor
 @Slf4j
 public class BoletaController {
 
     public static final String API_PATH = "/api/v1/boletas";
-    public static final String API_PATH_TEST = "/api";
 
     private final PaymentVoucherService paymentVoucherService;
     private final PaymentVoucherValidator paymentVoucherValidator;
