@@ -58,6 +58,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final AditionalFieldRestService aditionalFieldRestService;
     private final CuotaPaymentVoucherRestService cuotaPaymentVoucherRestService;
     private final GuiaPaymentRestService guiaPaymentRestService;
+    private final ProductRestService productRestService;
 
     @Value("${urlspublicas.descargaComprobante}")
     private String urlServiceDownload;
@@ -411,7 +412,19 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         paymentVoucherDto.setUuid(UUIDGen.generate());
         paymentVoucherDto.setFechaEmisionDate(new Date());
 
-        return paymentVoucherRestService.save(paymentVoucherDto);
+        boolean existGuiaRelacionada = false;
+        if (paymentVoucherDto.getGuiasRelacionadas() != null && !paymentVoucherDto.getGuiasRelacionadas().isEmpty()) {
+            for (GuiaPaymentVoucherDto guiaRelacionada : paymentVoucherDto.getGuiasRelacionadas()) {
+                if (guiaRelacionada.getIdguiaremision() != null) {
+                    existGuiaRelacionada = true;
+                    break;
+                }
+            }
+        }
+
+        PaymentVoucherDto paymentVoucherDtoCreated = paymentVoucherRestService.save(paymentVoucherDto);
+        validateControlStock(paymentVoucherDtoCreated, existGuiaRelacionada, nombreUsuario);
+        return paymentVoucherDtoCreated;
     }
 
     private PaymentVoucherDto updateVoucher(PaymentVoucherDto paymentVoucherDto, PaymentVoucherDto paymentVoucherDtoOld, Long idRegisterFile, String nombreUsuario) {
@@ -597,6 +610,64 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         paymentVoucher.setNombreComercialEmisor(companyDto.getNombreComer());
         paymentVoucher.setUblVersion(companyDto.getUblVersion() != null ? companyDto.getUblVersion() : ConstantesSunat.UBL_VERSION_2_0);
         return companyDto;
+    }
+
+    private void validateControlStock(PaymentVoucherDto paymentVoucherDtoCreated, boolean existGuiaRelacionada, String nombreUsuario) {
+        Boolean viewCompra = companyRestService.findViewCompraByRuc(paymentVoucherDtoCreated.getRucEmisor());
+        if (Boolean.TRUE.equals(viewCompra) && !(existGuiaRelacionada) ) {
+            for (DetailsPaymentVoucherDto item : paymentVoucherDtoCreated.getItems()) {
+                try {
+                    Long productoId = productRestService.findProductIdByCodigoOrDescripcion(
+                            item.getCodigoProducto(), item.getDescripcion());
+                    if (productoId != null) {
+                        ProductDto producto = productRestService.findById(productoId);
+
+                        Long stockAntes = producto.getStock();
+                        Long stockDespues = null;
+                        Long cantidad = item.getCantidad().longValueExact();
+                        String evento;
+
+                        UserDto userLogged = userRestService.findUserByUsername(nombreUsuario);
+
+                        String identificadorDocumento = paymentVoucherDtoCreated.getIdentificadorDocumento();
+
+                        if (identificadorDocumento == null || identificadorDocumento.isEmpty()) {
+                            throw new ServiceException("Identificador del documento es nulo o vacío.");
+                        }
+
+                        if (paymentVoucherDtoCreated.getTipoComprobante().equals("01") || paymentVoucherDtoCreated.getTipoComprobante().equals("03")) {
+                            stockDespues = stockAntes - cantidad;
+                            if (stockDespues < 0) {
+                                System.out.println("Advertencia: Stock insuficiente para el producto: " + producto.getCodigo());
+                                //throw new ServiceException("Stock insuficiente para el producto: " + producto.getCodigo());
+                            }
+
+                            productRestService.modificarStockPorIdProductoDB(productoId, -cantidad);
+                            evento = "VENTA";
+                            historialStockService.registrarHistorialStock(
+                                    producto,
+                                    userLogged,
+                                    stockAntes,
+                                    stockDespues,
+                                    null,
+                                    item,
+                                    paymentVoucherDtoCreated,
+                                    evento
+                            );
+                        } else if (paymentVoucherDtoCreated.getTipoComprobante().equals("07") &&
+                                paymentVoucherDtoCreated.getCodigoTipoNotaCredito() != null ) {
+                        } else {
+                            throw new ServiceException("Tipo de comprobante no válido: " + paymentVoucherDtoCreated.getTipoComprobante());
+                        }
+                        System.out.println("Historial registrado con éxito.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error durante el procesamiento del stock:");
+                    e.printStackTrace();
+                    //throw new ServiceException("Error al procesar el stock: " + e.getMessage());
+                }
+            }
+        }
     }
 
 }

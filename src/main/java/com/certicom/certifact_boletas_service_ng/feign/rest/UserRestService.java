@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.Optional;
+
 @Service
 public class UserRestService {
 
@@ -86,5 +88,6 @@ public class UserRestService {
     private String getUrlEndpoint() {
         return this.baseUrl+this.apiUserEndpoint;
     }
+
 
 }
