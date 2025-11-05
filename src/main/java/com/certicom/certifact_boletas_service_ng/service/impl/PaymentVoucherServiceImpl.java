@@ -3,22 +3,17 @@ package com.certicom.certifact_boletas_service_ng.service.impl;
 import com.certicom.certifact_boletas_service_ng.converter.PaymentVoucherConverter;
 import com.certicom.certifact_boletas_service_ng.dto.*;
 import com.certicom.certifact_boletas_service_ng.dto.others.*;
-import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
-import com.certicom.certifact_boletas_service_ng.enums.EstadoComprobanteEnum;
-import com.certicom.certifact_boletas_service_ng.enums.EstadoSunatEnum;
-import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
+import com.certicom.certifact_boletas_service_ng.enums.*;
 import com.certicom.certifact_boletas_service_ng.exception.ServiceException;
 import com.certicom.certifact_boletas_service_ng.exception.SignedException;
 import com.certicom.certifact_boletas_service_ng.exception.TemplateException;
 import com.certicom.certifact_boletas_service_ng.feign.*;
 import com.certicom.certifact_boletas_service_ng.feign.rest.*;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
+import com.certicom.certifact_boletas_service_ng.jms.SqsProducer;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.*;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesParameter;
-import com.certicom.certifact_boletas_service_ng.util.ConstantesSunat;
-import com.certicom.certifact_boletas_service_ng.util.UUIDGen;
-import com.certicom.certifact_boletas_service_ng.util.UtilArchivo;
+import com.certicom.certifact_boletas_service_ng.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,19 +30,11 @@ import java.util.*;
 public class PaymentVoucherServiceImpl implements PaymentVoucherService {
 
     private final PaymentVoucherFormatter paymentVoucherFormatter;
-    //private final UserFeign userFeign;
-    //private final CompanyFeign companyFeign;
-    //private final BranchOfficeFeign branchOfficeFeign;
-    //private final PaymentVoucherFeign paymentVoucherFeign;
+
     private final TemplateService templateService;
     private final AmazonS3ClientService amazonS3ClientService;
     private final DocumentsSummaryService documentsSummaryService;
     private final HistorialStockService historialStockService;
-    //private final DetailPaymentVoucherFeign detailPaymentVoucherFeign;
-    //private final AnticipoFeign anticipoFeign;
-    //private final AditionalFieldFeign aditionalFieldFeign;
-    //private final CuotaPaymentVoucherFeign cuotaPaymentVoucherFeign;
-    //private final GuiaPaymentFeign guiaPaymentFeign;
 
     private final UserRestService userRestService;
     private final CompanyRestService companyRestService;
@@ -59,6 +46,8 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
     private final CuotaPaymentVoucherRestService cuotaPaymentVoucherRestService;
     private final GuiaPaymentRestService guiaPaymentRestService;
     private final ProductRestService productRestService;
+
+    private final SqsProducer sqsProducer;
 
     @Value("${urlspublicas.descargaComprobante}")
     private String urlServiceDownload;
@@ -323,11 +312,11 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
                         sendBoletaDto.getUser()
                 );
                 if (responsePSE.getEstado()) {
-                    System.out.println("Se envio boleta por resumen diario de manera automatica");
-                    //messageProducer.produceProcessSummary(responsePSE.getTicket(), sendBoletaDto.getRuc());
+                    sqsProducer.produceProcessSummary(responsePSE.getTicket(), sendBoletaDto.getRuc());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado", e);
+                throw new ServiceException(LogMessages.ERROR_UNEXPECTED, e);
             }
         }
     }
