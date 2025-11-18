@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-public class RestTemplateInteceptor implements ClientHttpRequestInterceptor {
+public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 
     public static final String X_RUC_CLIENT = "X-RUC-Client";
     public static final String X_ID_USER = "X-ID-User";

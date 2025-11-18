@@ -1,6 +1,6 @@
 package com.certicom.certifact_boletas_service_ng.config;
 
-import com.certicom.certifact_boletas_service_ng.interceptor.RestTemplateInteceptor;
+import com.certicom.certifact_boletas_service_ng.interceptor.RestTemplateInterceptor;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -13,17 +13,17 @@ import java.util.List;
 @Component
 public class RestTemplateConfig {
 
-    private final RestTemplateInteceptor restTemplateInteceptor;
+    private final RestTemplateInterceptor restTemplateInterceptor;
 
-    public RestTemplateConfig(RestTemplateInteceptor restTemplateInteceptor) {
-        this.restTemplateInteceptor = restTemplateInteceptor;
+    public RestTemplateConfig(RestTemplateInterceptor restTemplateInterceptor) {
+        this.restTemplateInterceptor = restTemplateInterceptor;
     }
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         RestTemplate restTemplate = builder.build();
         List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>(restTemplate.getInterceptors());
-        interceptors.add(restTemplateInteceptor);
+        interceptors.add(restTemplateInterceptor);
         restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }
