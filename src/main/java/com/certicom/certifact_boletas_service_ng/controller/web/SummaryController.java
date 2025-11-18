@@ -1,4 +1,4 @@
-package com.certicom.certifact_boletas_service_ng.controller.web;
+package com.certicom.certifact_boletas_service_ng.controller;
 
 import com.certicom.certifact_boletas_service_ng.dto.others.IdentificadorComprobante;
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
