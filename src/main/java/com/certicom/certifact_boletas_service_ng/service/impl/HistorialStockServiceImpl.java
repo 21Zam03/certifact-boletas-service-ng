@@ -6,12 +6,18 @@ import com.certicom.certifact_boletas_service_ng.dto.ProductDto;
 import com.certicom.certifact_boletas_service_ng.dto.UserDto;
 import com.certicom.certifact_boletas_service_ng.feign.rest.HistorialStockRestService;
 import com.certicom.certifact_boletas_service_ng.service.HistorialStockService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class HistorialStockServiceImpl implements HistorialStockService {
 
-    private HistorialStockRestService historialStockRestService;
+    private final HistorialStockRestService historialStockRestService;
+
+    @Autowired
+    public HistorialStockServiceImpl(HistorialStockRestService historialStockRestService) {
+        this.historialStockRestService = historialStockRestService;
+    }
 
     @Override
     public void eliminarHistorialStockByDetail(DetailsPaymentVoucherDto detailsPaymentVoucherDto) {
