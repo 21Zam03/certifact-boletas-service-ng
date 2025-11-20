@@ -1,5 +1,7 @@
 spring:
   application:
-    name: certifact-facturas-service-ng
-server:
-  port: 8093
+    name: boletas-service-ng
+  profiles:
+    active: test
+  config:
+    import: "optional:configserver:http://config-server:8888"
