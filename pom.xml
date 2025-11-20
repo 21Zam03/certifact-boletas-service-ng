@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.certicom</groupId>
-	<artifactId>boletas_service_ng</artifactId>
+	<artifactId>boletas-service-ng</artifactId>
 	<version>0.0.1</version>
-	<name>boletas_service_ng</name>
+	<name>boletas-service-ng</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
