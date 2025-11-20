@@ -1,4 +1,4 @@
-package com.certicom.certifact_boletas_service_ng.controller;
+package com.certicom.certifact_boletas_service_ng.controller.web;
 
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.service.AmazonS3ClientService;
@@ -14,12 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 @RestController
-@RequestMapping(BoletaFileController.API_PATH_TEST)
+@RequestMapping(DescargaController.API_PATH)
 @RequiredArgsConstructor
-public class BoletaFileController {
+public class DescargaController {
 
-    public static final String API_PATH = "/api/internal/file";
-    public static final String API_PATH_TEST = "/api";
+    public static final String API_PATH = "/api/web/boletas";
 
     private final AmazonS3ClientService amazonS3ClientService;
 

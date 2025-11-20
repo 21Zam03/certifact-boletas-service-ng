@@ -1,4 +1,4 @@
-package com.certicom.certifact_boletas_service_ng.controller;
+package com.certicom.certifact_boletas_service_ng.controller.web;
 
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
@@ -15,37 +15,50 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(BoletaController.API_PATH)
+@RequestMapping(PaymentVoucherController.API_PATH)
 @RequiredArgsConstructor
 @Slf4j
-public class BoletaController {
+public class PaymentVoucherController {
 
-    public static final String API_PATH = "/api/v1/boletas";
+    public static final String API_PATH = "/api/web/boletas";
 
     private final PaymentVoucherService paymentVoucherService;
     private final PaymentVoucherValidator paymentVoucherValidator;
     private final PaymentVoucherFormatter paymentVoucherFormatter;
 
     @PostMapping("/comprobantes-pago")
-    public ResponseEntity<?> savePaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
-        //Id usuario por defecto va ir en duro hasta saber como identificar al usuario que haral a peticion desde el gateway
-        Long idUsuario = 2L;
-        String rucEmisor = "20204040303";
-        paymentVoucherRequest.setRucEmisor(rucEmisor);
+    public ResponseEntity<?> savePaymentVoucher(
+            @RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest,
+            @RequestHeader(name = "X-User-Ruc", required = true) String userRuc,
+            @RequestHeader(name = "X-User-Id", required = true) String userId,
+            @RequestHeader(name = "X-User-Roles", required = true) String rol
+    ) {
+        paymentVoucherRequest.setRucEmisor(userRuc);
 
         paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherRequest);
+
         paymentVoucherValidator.validate(paymentVoucherRequest, false);
-        Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, idUsuario);
+
+        Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, Long.valueOf(userId));
+
         return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.OK);
     }
 
     @PostMapping("/editar-comprobante")
-    public ResponseEntity<?> editPaymentVoucher(@RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest) {
-        Long idUsuario = 2L;
+    public ResponseEntity<?> editPaymentVoucher(
+            @RequestBody @Valid PaymentVoucherRequest paymentVoucherRequest,
+            @RequestHeader(name = "X-User-Ruc", required = true) String userRuc,
+            @RequestHeader(name = "X-User-Id", required = true) String userId,
+            @RequestHeader(name = "X-User-Roles", required = true) String rol
+    ) {
+        paymentVoucherRequest.setRucEmisor(userRuc);
 
         paymentVoucherFormatter.formatPaymentVoucher(paymentVoucherRequest);
+
         paymentVoucherValidator.validate(paymentVoucherRequest, true);
-        Map<String, Object> result = paymentVoucherService.updatePaymentVoucher(paymentVoucherRequest,  idUsuario);
+
+        Map<String, Object> result = paymentVoucherService.updatePaymentVoucher(paymentVoucherRequest,  Long.valueOf(userId));
+
         return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
     }
 

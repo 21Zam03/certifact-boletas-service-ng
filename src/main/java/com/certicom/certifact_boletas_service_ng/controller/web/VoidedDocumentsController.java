@@ -1,4 +1,4 @@
-package com.certicom.certifact_boletas_service_ng.controller;
+package com.certicom.certifact_boletas_service_ng.controller.web;
 
 import com.certicom.certifact_boletas_service_ng.dto.others.ResponsePSE;
 import com.certicom.certifact_boletas_service_ng.request.VoucherAnnularRequest;
@@ -8,36 +8,38 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping(BoletaVoidedDocumentsController.API_PATH)
+@RequestMapping(VoidedDocumentsController.API_PATH)
 @RequiredArgsConstructor
 @Slf4j
-public class BoletaVoidedDocumentsController {
+public class VoidedDocumentsController {
 
-    public final static String API_PATH = "/api/v1/voided";
+    public final static String API_PATH = "/api/web/boletas";
     private final DocumentsVoidedService documentsVoidedService;
     private final SummaryValidator summaryValidator;
 
-    @PostMapping
-    public ResponseEntity<?> anularPaymentVoucher(@RequestBody List<VoucherAnnularRequest> documentosToAnular) {
+    @PostMapping("/anulacion-comprobantes")
+    public ResponseEntity<?> anularPaymentVoucher(
+            @RequestBody List<VoucherAnnularRequest> documentosToAnular,
+            @RequestHeader(name = "X-User-Ruc", required = true) String userRuc,
+            @RequestHeader(name = "X-User-Id", required = true) String userId,
+            @RequestHeader(name = "X-User-Roles", required = true) String rol
+    ) {
         List<String> ticketsVoidedProcess = new ArrayList<>();
-        String rucEmisor = "20204040303";
+
         String username = "demo@certifakt.com.pe";
 
-        summaryValidator.validateSummaryByFechaEmision(rucEmisor,
-                "2025-09-24");
+        summaryValidator.validateSummaryByFechaEmision(userRuc,
+                "2025-11-20");
 
         ResponsePSE resp = documentsVoidedService.anularDocuments(
                 documentosToAnular,
-                rucEmisor,
+                userRuc,
                 username, ticketsVoidedProcess);
 
         return new ResponseEntity<>(resp, HttpStatus.OK);
