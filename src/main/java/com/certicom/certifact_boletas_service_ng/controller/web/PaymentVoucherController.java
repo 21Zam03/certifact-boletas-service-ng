@@ -41,7 +41,7 @@ public class PaymentVoucherController {
 
         Map<String, Object> result = paymentVoucherService.createPaymentVoucher(paymentVoucherRequest, Long.valueOf(userId));
 
-        return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.OK);
+        return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
     }
 
     @PostMapping("/editar-comprobante")
