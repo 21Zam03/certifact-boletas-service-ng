@@ -47,11 +47,11 @@ public class UserRestService {
                     "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
             throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+            LogHelper.errorLog(LogMessages.currentMethod(),
                     "Error de conexión con el servicio externo", e);
             throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
         } catch (RestClientException ex) {
-            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+            LogHelper.errorLog(LogMessages.currentMethod(),
                     "Error inesperado al comunicarse con el servicio externo", ex);
             throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }
@@ -75,11 +75,11 @@ public class UserRestService {
                     "Error "+e.getStatusCode()+" al comunicarse con el servicio externo, "+ e.getMessage());
             throw new ServiceException(LogMessages.ERROR_HTTP_SERVER, e);
         } catch (ResourceAccessException e) {
-            LogHelper.errorLog(LogTitle.ERROR_HTTP_RED.getType(), LogMessages.currentMethod(),
+            LogHelper.errorLog(LogMessages.currentMethod(),
                     "Error de conexión con el servicio externo", e);
             throw new ServiceException(LogMessages.ERROR_HTTP_RED, e);
         } catch (RestClientException ex) {
-            LogHelper.errorLog(LogTitle.ERROR_HTTP.getType(), LogMessages.currentMethod(),
+            LogHelper.errorLog(LogMessages.currentMethod(),
                     "Error inesperado al comunicarse con el servicio externo", ex);
             throw new ServiceException(LogMessages.ERROR_HTTP, ex);
         }

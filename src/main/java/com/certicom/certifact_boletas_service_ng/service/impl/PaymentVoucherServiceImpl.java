@@ -62,6 +62,68 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
         return updateExistingDocument(paymentVoucher, idUsuario);
     }
 
+    @Override
+    public List<PaymentVoucherDto> findComprobanteByAnticipo(String numDocIdentReceptor, String rucEmisor) {
+        List<String> tipoComprobante = new ArrayList<>();
+        tipoComprobante.add("03");
+
+        if (numDocIdentReceptor == null) {
+            numDocIdentReceptor = "";
+        }
+
+        List<PaymentVoucherDto> result = new ArrayList<>();
+        List<PaymentVoucherDto> list = paymentVoucherRestService
+                .findAllByTipoComprobanteInAndNumDocIdentReceptorAndRucEmisorAndTipoOperacionAndEstadoOrderByNumDocIdentReceptor(
+                        tipoComprobante, numDocIdentReceptor, rucEmisor, "04", "02");
+
+        List<PaymentVoucherDto> listDetracciones = paymentVoucherRestService
+                .findAllByTipoComprobanteInAndNumDocIdentReceptorAndRucEmisorAndTipoOperacionAndEstadoOrderByNumDocIdentReceptor(
+                        tipoComprobante, numDocIdentReceptor, rucEmisor, "1001", "02");
+
+        System.out.println("LISTA: "+listDetracciones);
+        for (PaymentVoucherDto vouch : list) {
+            if (vouch.getAnticipos().size() <= 0) {
+                result.add(vouch);
+
+            }
+        }
+
+        for (PaymentVoucherDto vouch : listDetracciones) {
+
+            if (vouch.getEstadoAnticipo() != null && vouch.getEstadoAnticipo() == 1) {
+                if (vouch.getAnticipos().size() <= 0) {
+                    result.add(vouch);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<PaymentVoucherDto> findComprobanteByCredito(String numDocIdentReceptor, String rucEmisor) {
+        if (numDocIdentReceptor == null) {
+            numDocIdentReceptor = "";
+        }
+
+        List<PaymentVoucherDto> result = new ArrayList<>();
+        List<PaymentVoucherDto> list = paymentVoucherRestService
+                .getPaymentVocuherByCredito(numDocIdentReceptor, rucEmisor);
+
+        for (PaymentVoucherDto vouch : list) {
+            if (vouch.getAnticipos().size() <= 0) {
+                result.add(vouch);
+            }
+        }
+
+        return list;
+    }
+
+    @Override
+    public PaymentVoucherDto getComprobanteById(Long id) {
+        return paymentVoucherRestService.findPaymentVoucherById(id);
+    }
+
     /*
     @Override
     public Map<String, Object> getSummaryDocumentsByFechaEmision(String fechaEmision, String rucEmisor, IdentificadorComprobante comprobante) {
@@ -315,7 +377,7 @@ public class PaymentVoucherServiceImpl implements PaymentVoucherService {
                     sqsProducer.produceProcessSummary(responsePSE.getTicket(), sendBoletaDto.getRuc());
                 }
             } catch (Exception e) {
-                LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado", e);
+                LogHelper.errorLog(LogMessages.currentMethod(), "Ocurrio un error inesperado", e);
                 throw new ServiceException(LogMessages.ERROR_UNEXPECTED, e);
             }
         }

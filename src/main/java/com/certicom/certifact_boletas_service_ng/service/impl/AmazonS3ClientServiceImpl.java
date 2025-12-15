@@ -101,13 +101,13 @@ public class AmazonS3ClientServiceImpl implements AmazonS3ClientService {
                     .build());
 
             watch.stop();
-            LogHelper.infoLog(LogTitle.INFO.getType(), LogMessages.currentMethod(),
+            LogHelper.infoLog(LogMessages.currentMethod(),
                     "El archivo se ha subido exitosamente, nombre=" + nameFile + ", tiempo=" + watch.getTime() + "ms");
 
             return resp;
 
         } catch (Exception ex) {
-            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(),
+            LogHelper.errorLog(LogMessages.currentMethod(),
                     "Error [" + ex.getMessage() + "] occurred while uploading [" + nameFile + "] ", ex);
             throw new ServiceException("Ocurrió un error al subir el archivo: " + ex.getMessage());
         }

@@ -327,8 +327,7 @@ public class BoletaTemplate {
             xml = formatXML(writer.toString());
         } catch (Exception ex) {
             //ex.printStackTrace();
-            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(),
-                    LogMessages.currentMethod(), "Ocurrio un error inesperado al momento de generar la plantilla xml", ex);
+            LogHelper.errorLog(LogMessages.currentMethod(), "Ocurrio un error inesperado al momento de generar la plantilla xml", ex);
             throw new TemplateException(ex.getMessage());
         }
         return xml;

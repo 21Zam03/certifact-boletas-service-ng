@@ -133,7 +133,7 @@ public class Signed {
 
         } catch (Exception ex) {
             //ex.printStackTrace();
-            LogHelper.errorLog(LogTitle.ERROR_UNEXPECTED.getType(), LogMessages.currentMethod(), "Ocurrio un error inesperado al firmar documento xml", ex);
+            LogHelper.errorLog(LogMessages.currentMethod(), "Ocurrio un error inesperado al firmar documento xml", ex);
             throw new SignedException("Error al firmar documento xml: " + (ex == null ? "" : ex.getMessage()));
         }
         return response;

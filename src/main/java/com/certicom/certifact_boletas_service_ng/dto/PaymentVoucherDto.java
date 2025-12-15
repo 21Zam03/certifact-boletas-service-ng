@@ -3,6 +3,7 @@ package com.certicom.certifact_boletas_service_ng.dto;
 import com.certicom.certifact_boletas_service_ng.enums.EstadoArchivoEnum;
 import com.certicom.certifact_boletas_service_ng.enums.TipoArchivoEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -26,12 +27,16 @@ public class PaymentVoucherDto {
     private String horaEmision;
     private String fechaVencimiento;
     private String codigoMoneda;
+    @JsonProperty("tipoOperacion")
     private String codigoTipoOperacion;
     private String codigoTipoOperacionCatalogo51;
     private String rucEmisor;
     private String direccionOficinaEmisor;
+    @JsonProperty("codigoLocalAnexo")
     private String codigoLocalAnexoEmisor;
+    @JsonProperty("tipoDocIdentReceptor")
     private String tipoDocumentoReceptor;
+    @JsonProperty("numDocIdentReceptor")
     private String numeroDocumentoReceptor;
     private String denominacionReceptor;
     private String direccionReceptor;
@@ -41,11 +46,16 @@ public class PaymentVoucherDto {
     private List<LeyendaDto> leyendas;
     private String serieNumeroOtroDocumentoRelacionado;
     private String codigoTipoOtroDocumentoRelacionado;
+    @JsonProperty("totalValorVentaOperacionExportada")
     private BigDecimal totalValorVentaExportacion;
+    @JsonProperty("totalValorVentaOperacionGravada")
     private BigDecimal totalValorVentaGravada;
     private BigDecimal totalValorVentaGravadaIVAP;
+    @JsonProperty("totalValorVentaOperacionInafecta")
     private BigDecimal totalValorVentaInafecta;
+    @JsonProperty("totalValorVentaOperacionExonerada")
     private BigDecimal totalValorVentaExonerada;
+    @JsonProperty("totalValorVentaOperacionGratuita")
     private BigDecimal totalValorVentaGratuita;
     private BigDecimal totalValorBaseOtrosTributos;
     private BigDecimal totalValorBaseIsc;
@@ -57,6 +67,7 @@ public class PaymentVoucherDto {
     private BigDecimal totalDescuento;
     private BigDecimal descuentoGlobales;
     private BigDecimal sumatoriaOtrosCargos;
+    @JsonProperty("montoTotalAnticipos")
     private BigDecimal totalAnticipos;
     private BigDecimal importeTotalVenta;
     private String serieAfectado;
@@ -65,6 +76,7 @@ public class PaymentVoucherDto {
     private String codigoTipoNotaCredito;
     private String codigoTipoNotaDebito;
     private String motivoNota;
+    @JsonProperty("detailsPaymentVouchers")
     private List<DetailsPaymentVoucherDto> items;
     private String denominacionEmisor;
     private String nombreComercialEmisor;
@@ -107,6 +119,7 @@ public class PaymentVoucherDto {
     private Date fechaEmisionDate;
     private Boolean boletaAnuladaSinEmitir;
     private String motivoAnulacion;
+    private Integer estadoAnticipo;
 
     private List<PaymentVoucherFileDto> paymentVoucherFileDtoList;
 

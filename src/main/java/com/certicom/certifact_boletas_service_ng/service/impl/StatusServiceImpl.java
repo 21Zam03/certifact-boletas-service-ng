@@ -359,6 +359,7 @@ public class StatusServiceImpl implements StatusService {
                     if (!comprobantesByAceptar.isEmpty()) {
                         // LEYTER
                         System.out.println("SEGUIMIENTO 024");
+                        System.out.println("FECHA MODIFICACION: "+fechaModificacion);
                         paymentVoucherRestService.updateComprobantesBySummaryDocuments(
                                 comprobantesByAceptar,
                                 EstadoComprobanteEnum.ACEPTADO.getCodigo(),

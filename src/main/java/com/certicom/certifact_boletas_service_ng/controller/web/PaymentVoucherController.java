@@ -1,5 +1,6 @@
 package com.certicom.certifact_boletas_service_ng.controller.web;
 
+import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -60,6 +62,34 @@ public class PaymentVoucherController {
         Map<String, Object> result = paymentVoucherService.updatePaymentVoucher(paymentVoucherRequest,  Long.valueOf(userId));
 
         return new ResponseEntity<>(result.get(ConstantesParameter.PARAM_BEAN_RESPONSE_PSE), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/comprobantes-anticipo")
+    public ResponseEntity<List<PaymentVoucherDto>> comprobantesAnticipo(
+            @RequestParam(name = "filtroNumDoc", required = true) String filtroNumDoc,
+            @RequestHeader(name = "X-User-Ruc", required = true) String ruc,
+            @RequestHeader(name = "X-User-Id", required = true) Long usuarioId,
+            @RequestHeader(name = "X-User-Roles", required = true) List<String> roles) {
+        return new ResponseEntity<List<PaymentVoucherDto>>(paymentVoucherService.findComprobanteByAnticipo(filtroNumDoc, ruc), HttpStatus.OK);
+    }
+
+    @GetMapping("/comprobantes-credito")
+    public ResponseEntity<List<PaymentVoucherDto>> comprobantesCredito(
+            @RequestParam(name = "filtroNumDoc", required = true) String filtroNumDoc,
+            @RequestHeader(name = "X-User-Ruc", required = true) String ruc,
+            @RequestHeader(name = "X-User-Id", required = true) Long usuarioId,
+            @RequestHeader(name = "X-User-Roles", required = true) List<String> roles) {
+        return new ResponseEntity<List<PaymentVoucherDto>>(paymentVoucherService.findComprobanteByCredito(filtroNumDoc, ruc), HttpStatus.OK);
+    }
+
+    @GetMapping("/comprobanteById")
+    public ResponseEntity<?> comprobanteById(
+            @RequestParam(name = "id", required = true) Long id,
+            @RequestHeader(name = "X-User-Ruc", required = true) String ruc,
+            @RequestHeader(name = "X-User-Id", required = true) Long usuarioId,
+            @RequestHeader(name = "X-User-Roles", required = true) List<String> roles) {
+
+        return new ResponseEntity<Object>(paymentVoucherService.getComprobanteById(id), HttpStatus.OK);
     }
 
 }
