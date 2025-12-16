@@ -1,5 +1,6 @@
 package com.certicom.certifact_boletas_service_ng.controller.web;
 
+import com.certicom.certifact_boletas_service_ng.dto.PaymentVoucherDto;
 import com.certicom.certifact_boletas_service_ng.formatter.PaymentVoucherFormatter;
 import com.certicom.certifact_boletas_service_ng.request.PaymentVoucherRequest;
 import com.certicom.certifact_boletas_service_ng.service.PaymentVoucherService;

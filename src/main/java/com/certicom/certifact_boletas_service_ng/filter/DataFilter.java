@@ -1,6 +1,5 @@
 package com.certicom.certifact_boletas_service_ng.filter;
 
-import com.certicom.certifact_boletas_service_ng.enums.LogTitle;
 import com.certicom.certifact_boletas_service_ng.util.LogHelper;
 import com.certicom.certifact_boletas_service_ng.util.LogMessages;
 import jakarta.servlet.*;
